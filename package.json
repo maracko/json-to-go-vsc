@@ -5,7 +5,7 @@
 		"email": "mario.petricko@outlook.com"
 	},
 	"publisher": "maracko",
-	"repository": "https://github.com/Maracko/json-to-go",
+	"repository": "https://github.com/Maracko/json-to-go-vsc",
 	"displayName": "JSON to Go",
 	"description": "Convert JSON data to Go struct",
 	"version": "0.0.1",
@@ -29,10 +29,32 @@
 		"menus": {
 			"editor/context": [
 				{
-					"when": "editorLangId in json-to-go:activationTypes",
+					"when": "editorLangId in json-to-go:supportedLanguages",
 					"command": "json-to-go.convert"
 				}
 			]
+		},
+		"configuration": {
+			"title": "JSON to Go",
+			"properties": {
+				"json-to-go.inlineTypeDefinitions": {
+					"type": "boolean",
+					"default": false,
+					"description": "Toggle to show nested structs in-line or below the main struct"
+				},
+				"json-to-go.contextMenu.supportedLanguages": {
+					"type": "array",
+					"default": [
+						"javascript",
+						"typescript",
+						"json",
+						"jsonc",
+						"html",
+						"go"
+					],
+					"description": "For which languages do you want to show JSON to Go command in context menu"
+				}
+			}
 		}
 	},
 	"scripts": {

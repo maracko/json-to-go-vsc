@@ -10,23 +10,13 @@ const jsonToGo = require('./json-to-go.js')
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-	console.log("JSON to Go Started")
-	//Add supported file extensions to context
-	vscode.commands.executeCommand('setContext', 'json-to-go:activationTypes', [
-		'javascript',
-		'js',
-		'typescript',
-		'ts',
-		'json',
-		'jsonc',
-		'html',
-		'go',
-		'gohtml'
-	])
+	let settings = vscode.workspace.getConfiguration('json-to-go')
+
+	vscode.commands.executeCommand('setContext', 'json-to-go:supportedLanguages', settings.get('contextMenu.supportedLanguages'))
 
 	let convertFunc = vscode.commands.registerCommand('json-to-go.convert', convert)
 	context.subscriptions.push(convertFunc)
-
+	console.log('JSON to Go Started')
 }
 
 
@@ -34,41 +24,69 @@ function deactivate() {
 
 }
 
-function convert() {
-	console.log('Converting JSON to Go');
-	let editor = vscode.window.activeTextEditor
-	if (!editor) {
-		vscode.window.showErrorMessage("No editor active")
-		return
-	}
-	let selection = editor.selection
-	let text = editor.document.getText(selection)
-	if (!text) {
-		vscode.window.showErrorMessage("No text selected")
-		return
-	}
-	let struct = jsonToGo(text)
-	if (struct.error) {
-		vscode.window.showErrorMessage("Invalid JSON")
-		return
-	}
+async function convert() {
 
-	tmp.file({ prefix: 'GoStruct-', postfix: '.go', keep: false }, function (err, path) {
-		if (err) {
-			throw err
+	try {
+		console.log('Converting JSON to Go');
+
+		let editor = vscode.window.activeTextEditor
+		if (!editor) {
+			vscode.window.showErrorMessage('No editor active')
+			return
 		}
-		console.log("Temporary file: ", path);
-		fs.writeFileSync(path, struct.go)
 
-		let openPath = vscode.Uri.file(path);
+		let selection = editor.selection
+		let selectedText = editor.document.getText(selection)
+		if (!selectedText) {
+			vscode.window.showErrorMessage('No text selected')
+			return
+		}
 
-		vscode.workspace.openTextDocument(openPath).then(doc => {
-			vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, false);
+		let inline = vscode.workspace.getConfiguration('json-to-go').get('inlineTypeDefinitions')
+		let struct = jsonToGo(selectedText, null, !inline)
+		if (struct.error) {
+			vscode.window.showErrorMessage('Invalid JSON')
+			return
+		}
+
+		tmp.file({ prefix: 'GoStruct-', postfix: '.go', keep: false }, function (err, path) {
+			if (err) {
+				vscode.window.showErrorMessage(err)
+			}
+			console.log('Temporary file: ', path);
+			fs.writeFileSync(path, struct.go);
+
+			let openPath = vscode.Uri.file(path)
+			vscode.workspace.openTextDocument(openPath).then(doc => {
+				vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, false)
+			})
 		})
-	})
 
 
+		setTimeout(() => {
+			vscode.commands.executeCommand('cursorMove', {
+				to: 'right',
+				by: 'character',
+				value: 5
+			})
+		},
+			50)
+
+		setTimeout(() => {
+			vscode.commands.executeCommand('cursorMove', {
+				to: 'right',
+				by: 'character',
+				value: 13,
+				select: true
+			})
+		},
+			50)
+
+	} catch (err) {
+		console.log(err)
+	}
 }
+
 
 module.exports = {
 	activate,

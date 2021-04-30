@@ -2,8 +2,12 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+## [0.0.2]
+### Added
 
-## [Unreleased]
+- You can now configure whether structs should be in-line or not
+- Choose languages in which JSON to Go command will be avaliable with a custom array
+- After execution type name will automatically be selected so you can change it
 
-- Initial release
+## [0.0.1]
+### Initial release
