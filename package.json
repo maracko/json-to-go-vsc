@@ -1,0 +1,58 @@
+{
+	"name": "json-to-go",
+	"author": {
+		"name": "Mario Petričko",
+		"email": "mario.petricko@outlook.com"
+	},
+	"publisher": "maracko",
+	"repository": "https://github.com/Maracko/json-to-go",
+	"displayName": "JSON to Go",
+	"description": "Convert JSON data to Go struct",
+	"version": "0.0.1",
+	"engines": {
+		"vscode": "^1.55.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"main": "./extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "json-to-go.convert",
+				"title": "JSON to Go"
+			}
+		],
+		"menus": {
+			"editor/context": [
+				{
+					"when": "editorLangId in json-to-go:activationTypes",
+					"command": "json-to-go.convert"
+				}
+			]
+		}
+	},
+	"scripts": {
+		"lint": "eslint .",
+		"pretest": "npm run lint",
+		"test": "node ./test/runTest.js"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.55.0",
+		"@types/glob": "^7.1.3",
+		"@types/mocha": "^8.0.4",
+		"@types/node": "^12.11.7",
+		"eslint": "^7.19.0",
+		"glob": "^7.1.6",
+		"mocha": "^8.2.1",
+		"typescript": "^4.1.3",
+		"vscode-test": "^1.5.0"
+	},
+	"dependencies": {
+		"tmp": "^0.2.1"
+	},
+	"icon": "icon.png"
+}
