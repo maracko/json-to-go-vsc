@@ -2,6 +2,10 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [0.3.1]
+
+- Update mholt/json-to-go dep. to latest version
+
 ## [0.3.0]
 
 - Now supports converting from clipboard. On first run it will ask you the data source.
