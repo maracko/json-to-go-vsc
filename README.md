@@ -53,8 +53,8 @@ type Employee struct {
 
 ### Input source
 
-Here you can choose the source of the JSON data.
-If setting is ask me every time, you will be asked on every run of the command.
-Also you will be asked to remember your choice, unless you select `No and don't ask again' in which case you will never be asked again to save your choice.
+Here you can choose the source of the JSON data.  
+If setting is ask me every time, you will be asked on every run of the command.  
+Also you will be asked to remember your choice, unless you select `No and don't ask again' in which case you will never be asked again to save your choice.  
 
 All credits for the original json-to-go belong to [mholt](https://github.com/mholt/)

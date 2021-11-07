@@ -8,7 +8,7 @@
 	"repository": "https://github.com/Maracko/json-to-go-vsc",
 	"displayName": "JSON to Go",
 	"description": "Convert JSON data to Go struct",
-	"version": "0.0.2",
+	"version": "0.3.0",
 	"engines": {
 		"vscode": "^1.55.0"
 	},
@@ -29,7 +29,7 @@
 		"menus": {
 			"editor/context": [
 				{
-					"when": "editorLangId in json-to-go:supportedLanguages",
+					"when": "editorLangId in json-to-go:contextMenuLanguages || json-to-go:contextMenuAlways",
 					"command": "json-to-go.convert"
 				}
 			]
@@ -40,7 +40,7 @@
 				"json-to-go.inlineTypeDefinitions": {
 					"type": "boolean",
 					"default": false,
-					"description": "Toggle to show nested structs in-line or below the main struct"
+					"description": "If turned on nested structs are defined in-line, else below the main struct"
 				},
 				"json-to-go.contextMenu.supportedLanguages": {
 					"type": "array",
@@ -52,7 +52,22 @@
 						"html",
 						"go"
 					],
-					"description": "For which languages do you want to show JSON to Go command in context menu"
+					"description": "Editor languages inside which right mouse context menu entry is shown. Include \"*\" for all languages."
+				},
+				"json-to-go.inputSource": {
+					"type": "string",
+					"default": "ask me every time",
+					"description": "Source of JSON data to convert. Can be either clipboard or selection in active editor",
+					"enum": [
+						"clipboard",
+						"selection",
+						"ask me every time"
+					],
+					"enumDescriptions": [
+						"JSON data is copied from clipboard and converted",
+						"JSON data is copied from active editor selection and converted",
+						"User is asked every time to select source of JSON data"
+					]
 				}
 			}
 		}
