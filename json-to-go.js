@@ -156,6 +156,8 @@ function jsonToGo(json, typename, flatten = true) {
 			)
 		}
 
+		const seenTypeNames = [];
+
 		if (flatten && depth >= 2) {
 			const parentType = `type ${parent}`;
 			const scopeKeys = formatScopeKeys(Object.keys(scope));
@@ -175,7 +177,9 @@ function jsonToGo(json, typename, flatten = true) {
 			for (let i in keys) {
 				const keyname = getOriginalName(keys[i]);
 				indenter(innerTabs)
-				const typename = format(keyname)
+				const typename = uniqueTypeName(format(keyname), seenTypeNames)
+				seenTypeNames.push(typename)
+
 				appender(typename + " ");
 				parent = typename
 				parseScope(scope[keys[i]], depth);
@@ -195,7 +199,8 @@ function jsonToGo(json, typename, flatten = true) {
 			for (let i in keys) {
 				const keyname = getOriginalName(keys[i]);
 				indent(tabs);
-				const typename = format(keyname);
+				const typename = uniqueTypeName(format(keyname), seenTypeNames)
+				seenTypeNames.push(typename)
 				append(typename + " ");
 				parent = typename
 				parseScope(scope[keys[i]], depth);
@@ -230,8 +235,40 @@ function jsonToGo(json, typename, flatten = true) {
 		stack[stack.length - 1] += str;
 	}
 
+	// Generate a unique name to avoid duplicate struct field names.
+	// This function appends a number at the end of the field name.
+	function uniqueTypeName(name, seen) {
+		if (seen.indexOf(name) === -1) {
+			return name;
+		}
+
+		let i = 0;
+		while (true) {
+			let newName = name + i.toString();
+			if (seen.indexOf(newName) === -1) {
+				return newName;
+			}
+
+			i++;
+		}
+	}
+
 	// Sanitizes and formats a string to make an appropriate identifier in Go
 	function format(str) {
+		str = formatNumber(str);
+
+		let sanitized = toProperCase(str).replace(/[^a-z0-9]/ig, "")
+		if (!sanitized) {
+			return "NAMING_FAILED";
+		}
+
+		// After sanitizing the remaining characters can start with a number.
+		// Run the sanitized string again trough formatNumber to make sure the identifier is Num[0-9] or Zero_... instead of 1.
+		return formatNumber(sanitized)
+	}
+
+	// Adds a prefix to a number to make an appropriate identifier in Go
+	function formatNumber(str) {
 		if (!str)
 			return "";
 		else if (str.match(/^\d+$/))
@@ -244,7 +281,8 @@ function jsonToGo(json, typename, flatten = true) {
 			};
 			str = numbers[str.charAt(0)] + str.substr(1);
 		}
-		return toProperCase(str).replace(/[^a-z0-9]/ig, "") || "NAMING_FAILED";
+
+		return str;
 	}
 
 	// Determines the most appropriate Go type
@@ -293,7 +331,9 @@ function jsonToGo(json, typename, flatten = true) {
 	// Proper cases a string according to Go conventions
 	function toProperCase(str) {
 		// ensure that the SCREAMING_SNAKE_CASE is converted to snake_case
-		str = str.toLowerCase();
+		if (str.match(/^[_A-Z0-9]+$/)) {
+			str = str.toLowerCase();
+		}
 
 		// https://github.com/golang/lint/blob/5614ed5bae6fb75893070bdc0996a68765fdd275/lint.go#L771-L810
 		const commonInitialisms = [
