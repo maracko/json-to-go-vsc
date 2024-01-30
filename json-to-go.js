@@ -7,7 +7,8 @@
 	A simple utility to translate JSON into a Go type definition.
 */
 
-function jsonToGo(json, typename, flatten = true) {
+function jsonToGo(json, typename, flatten = true, example = false, allOmitempty = false)
+{
 	let data;
 	let scope;
 	let go = "";
@@ -19,11 +20,13 @@ function jsonToGo(json, typename, flatten = true) {
 	let innerTabs = 0;
 	let parent = "";
 
-	try {
-		data = JSON.parse(json.replace(/:(\s*\d*)\.0/g, ":$1.1")); // hack that forces floats to stay as floats
+	try
+	{
+		data = JSON.parse(json.replace(/(:\s*\[?\s*-?\d*)\.0/g, "$1.1")); // hack that forces floats to stay as floats
 		scope = data;
 	}
-	catch (e) {
+	catch (e)
+	{
 		return {
 			go: "",
 			error: e.message
@@ -42,19 +45,24 @@ function jsonToGo(json, typename, flatten = true) {
 	};
 
 
-	function parseScope(scope, depth = 0) {
-		if (typeof scope === "object" && scope !== null) {
-			if (Array.isArray(scope)) {
+	function parseScope(scope, depth = 0)
+	{
+		if (typeof scope === "object" && scope !== null)
+		{
+			if (Array.isArray(scope))
+			{
 				let sliceType;
 				const scopeLength = scope.length;
 
-				for (let i = 0; i < scopeLength; i++) {
+				for (let i = 0; i < scopeLength; i++)
+				{
 					const thisType = goType(scope[i]);
 					if (!sliceType)
 						sliceType = thisType;
-					else if (sliceType != thisType) {
+					else if (sliceType != thisType)
+					{
 						sliceType = mostSpecificPossibleGoType(thisType, sliceType);
-						if (sliceType == "interface{}")
+						if (sliceType == "any")
 							break;
 					}
 				}
@@ -71,9 +79,11 @@ function jsonToGo(json, typename, flatten = true) {
 					const allFields = {};
 
 					// for each field counts how many times appears
-					for (let i = 0; i < scopeLength; i++) {
+					for (let i = 0; i < scopeLength; i++)
+					{
 						const keys = Object.keys(scope[i])
-						for (let k in keys) {
+						for (let k in keys)
+						{
 							let keyname = keys[k];
 							if (!(keyname in allFields)) {
 								allFields[keyname] = {
@@ -106,7 +116,8 @@ function jsonToGo(json, typename, flatten = true) {
 					// create a common struct with all fields found in the current array
 					// omitempty dict indicates if a field is optional
 					const keys = Object.keys(allFields), struct = {}, omitempty = {};
-					for (let k in keys) {
+					for (let k in keys)
+					{
 						const keyname = keys[k], elem = allFields[keyname];
 
 						struct[keyname] = elem.value;
@@ -119,15 +130,16 @@ function jsonToGo(json, typename, flatten = true) {
 				}
 				else {
 					if (flatten && depth >= 2) {
-						appender(sliceType || "interface{}");
+						appender(sliceType || "any");
 					} else {
-						append(sliceType || "interface{}");
+						append(sliceType || "any");
 					}
 				}
 			}
-			else {
+			else
+			{
 				if (flatten) {
-					if (depth >= 2) {
+					if (depth >= 2){
 						appender(parent)
 					}
 					else {
@@ -138,7 +150,7 @@ function jsonToGo(json, typename, flatten = true) {
 			}
 		}
 		else {
-			if (flatten && depth >= 2) {
+			if (flatten && depth >= 2){
 				appender(goType(scope));
 			}
 			else {
@@ -147,18 +159,20 @@ function jsonToGo(json, typename, flatten = true) {
 		}
 	}
 
-	function parseStruct(depth, innerTabs, scope, omitempty) {
+	function parseStruct(depth, innerTabs, scope, omitempty)
+	{
 		if (flatten) {
 			stack.push(
 				depth >= 2
-					? "\n"
-					: ""
+				? "\n"
+				: ""
 			)
 		}
 
 		const seenTypeNames = [];
 
-		if (flatten && depth >= 2) {
+		if (flatten && depth >= 2)
+		{
 			const parentType = `type ${parent}`;
 			const scopeKeys = formatScopeKeys(Object.keys(scope));
 
@@ -174,17 +188,19 @@ function jsonToGo(json, typename, flatten = true) {
 			appender(`${parentType} struct {\n`);
 			++innerTabs;
 			const keys = Object.keys(scope);
-			for (let i in keys) {
+			for (let i in keys)
+			{
 				const keyname = getOriginalName(keys[i]);
 				indenter(innerTabs)
 				const typename = uniqueTypeName(format(keyname), seenTypeNames)
 				seenTypeNames.push(typename)
 
-				appender(typename + " ");
+				appender(typename+" ");
 				parent = typename
 				parseScope(scope[keys[i]], depth);
-				appender(' `json:"' + keyname);
-				if (omitempty && omitempty[keys[i]] === true) {
+				appender(' `json:"'+keyname);
+				if (allOmitempty || (omitempty && omitempty[keys[i]] === true))
+				{
 					appender(',omitempty');
 				}
 				appender('"`\n');
@@ -192,21 +208,28 @@ function jsonToGo(json, typename, flatten = true) {
 			indenter(--innerTabs);
 			appender("}");
 		}
-		else {
+		else
+		{
 			append("struct {\n");
 			++tabs;
 			const keys = Object.keys(scope);
-			for (let i in keys) {
+			for (let i in keys)
+			{
 				const keyname = getOriginalName(keys[i]);
 				indent(tabs);
 				const typename = uniqueTypeName(format(keyname), seenTypeNames)
 				seenTypeNames.push(typename)
-				append(typename + " ");
+				append(typename+" ");
 				parent = typename
 				parseScope(scope[keys[i]], depth);
-				append(' `json:"' + keyname);
-				if (omitempty && omitempty[keys[i]] === true) {
+				append(' `json:"'+keyname);
+				if (allOmitempty || (omitempty && omitempty[keys[i]] === true))
+				{
 					append(',omitempty');
+				}
+				if (example && scope[keys[i]] !== "" && typeof scope[keys[i]] !== "object")
+				{
+					append('" example:"'+scope[keys[i]])
 				}
 				append('"`\n');
 			}
@@ -217,21 +240,25 @@ function jsonToGo(json, typename, flatten = true) {
 			accumulator += stack.pop();
 	}
 
-	function indent(tabs) {
+	function indent(tabs)
+	{
 		for (let i = 0; i < tabs; i++)
 			go += '\t';
 	}
 
-	function append(str) {
+	function append(str)
+	{
 		go += str;
 	}
 
-	function indenter(tabs) {
+	function indenter(tabs)
+	{
 		for (let i = 0; i < tabs; i++)
 			stack[stack.length - 1] += '\t';
 	}
 
-	function appender(str) {
+	function appender(str)
+	{
 		stack[stack.length - 1] += str;
 	}
 
@@ -254,7 +281,8 @@ function jsonToGo(json, typename, flatten = true) {
 	}
 
 	// Sanitizes and formats a string to make an appropriate identifier in Go
-	function format(str) {
+	function format(str)
+	{
 		str = formatNumber(str);
 
 		let sanitized = toProperCase(str).replace(/[^a-z0-9]/ig, "")
@@ -273,12 +301,11 @@ function jsonToGo(json, typename, flatten = true) {
 			return "";
 		else if (str.match(/^\d+$/))
 			str = "Num" + str;
-		else if (str.charAt(0).match(/\d/)) {
-			const numbers = {
-				'0': "Zero_", '1': "One_", '2': "Two_", '3': "Three_",
+		else if (str.charAt(0).match(/\d/))
+		{
+			const numbers = {'0': "Zero_", '1': "One_", '2': "Two_", '3': "Three_",
 				'4': "Four_", '5': "Five_", '6': "Six_", '7': "Seven_",
-				'8': "Eight_", '9': "Nine_"
-			};
+				'8': "Eight_", '9': "Nine_"};
 			str = numbers[str.charAt(0)] + str.substr(1);
 		}
 
@@ -286,18 +313,21 @@ function jsonToGo(json, typename, flatten = true) {
 	}
 
 	// Determines the most appropriate Go type
-	function goType(val) {
+	function goType(val)
+	{
 		if (val === null)
-			return "interface{}";
+			return "any";
 
-		switch (typeof val) {
+		switch (typeof val)
+		{
 			case "string":
-				if (/\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(\+\d\d:\d\d|Z)/.test(val))
+				if (/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?(\+\d\d:\d\d|Z)$/.test(val))
 					return "time.Time";
 				else
 					return "string";
 			case "number":
-				if (val % 1 === 0) {
+				if (val % 1 === 0)
+				{
 					if (val > -2147483648 && val < 2147483647)
 						return "int";
 					else
@@ -312,24 +342,26 @@ function jsonToGo(json, typename, flatten = true) {
 					return "slice";
 				return "struct";
 			default:
-				return "interface{}";
+				return "any";
 		}
 	}
 
 	// Given two types, returns the more specific of the two
-	function mostSpecificPossibleGoType(typ1, typ2) {
+	function mostSpecificPossibleGoType(typ1, typ2)
+	{
 		if (typ1.substr(0, 5) == "float"
-			&& typ2.substr(0, 3) == "int")
+				&& typ2.substr(0, 3) == "int")
 			return typ1;
 		else if (typ1.substr(0, 3) == "int"
-			&& typ2.substr(0, 5) == "float")
+				&& typ2.substr(0, 5) == "float")
 			return typ2;
 		else
-			return "interface{}";
+			return "any";
 	}
 
 	// Proper cases a string according to Go conventions
-	function toProperCase(str) {
+	function toProperCase(str)
+	{
 		// ensure that the SCREAMING_SNAKE_CASE is converted to snake_case
 		if (str.match(/^[_A-Z0-9]+$/)) {
 			str = str.toLowerCase();
@@ -343,12 +375,14 @@ function jsonToGo(json, typename, flatten = true) {
 			"URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS"
 		];
 
-		return str.replace(/(^|[^a-zA-Z])([a-z]+)/g, function (unused, sep, frag) {
+		return str.replace(/(^|[^a-zA-Z])([a-z]+)/g, function(unused, sep, frag)
+		{
 			if (commonInitialisms.indexOf(frag.toUpperCase()) >= 0)
 				return sep + frag.toUpperCase();
 			else
 				return sep + frag[0].toUpperCase() + frag.substr(1).toLowerCase();
-		}).replace(/([A-Z])([a-z]+)/g, function (unused, sep, frag) {
+		}).replace(/([A-Z])([a-z]+)/g, function(unused, sep, frag)
+		{
 			if (commonInitialisms.indexOf(sep + frag.toUpperCase()) >= 0)
 				return (sep + frag).toUpperCase();
 			else
@@ -357,9 +391,9 @@ function jsonToGo(json, typename, flatten = true) {
 	}
 
 	function uuidv4() {
-		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-			var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-			return v.toString(16);
+		return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+		  var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+		  return v.toString(16);
 		});
 	}
 
@@ -410,23 +444,23 @@ function jsonToGo(json, typename, flatten = true) {
 }
 
 if (typeof module != 'undefined') {
-	if (!module.parent) {
-		if (process.argv.length > 2 && process.argv[2] === '-big') {
-			bufs = []
-			process.stdin.on('data', function (buf) {
-				bufs.push(buf)
-			})
-			process.stdin.on('end', function () {
-				const json = Buffer.concat(bufs).toString('utf8')
-				console.log(jsonToGo(json).go)
-			})
-		} else {
-			process.stdin.on('data', function (buf) {
-				const json = buf.toString('utf8')
-				console.log(jsonToGo(json).go)
-			})
-		}
-	} else {
-		module.exports = jsonToGo
-	}
+    if (!module.parent) {
+        if (process.argv.length > 2 && process.argv[2] === '-big') {
+            bufs = []
+            process.stdin.on('data', function(buf) {
+                bufs.push(buf)
+            })
+            process.stdin.on('end', function() {
+                const json = Buffer.concat(bufs).toString('utf8')
+                console.log(jsonToGo(json).go)
+            })
+        } else {
+            process.stdin.on('data', function(buf) {
+                const json = buf.toString('utf8')
+                console.log(jsonToGo(json).go)
+            })
+        }
+    } else {
+        module.exports = jsonToGo
+    }
 }
