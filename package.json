@@ -54,7 +54,7 @@
 					],
 					"description": "Editor languages inside which right mouse context menu entry is shown. Include \"*\" for all languages."
 				},
-				"json-to-go.inputSource": {
+				"json-to-go.input": {
 					"type": "string",
 					"default": "ask me every time",
 					"description": "Source of JSON data to convert. Can be either clipboard or selection in active editor",
@@ -68,6 +68,23 @@
 						"JSON data is copied from active editor selection and converted",
 						"User is asked every time to select source of JSON data"
 					]
+				},
+				"json-to-go.output": {
+					"type": "string",
+					"default": "ask me every time",
+					"description": "Destination of struct definition string. Can be either clipboard, inserted after cursor position in active editor or temporary file",
+					"enum": [
+						"clipboard",
+						"cursor position",
+						"temporary file",
+						"ask me every time"
+					],
+					"enumDescriptions": [
+						"Outputs struct to clipboard",
+						"Outputs struct after cursor position in active editor",
+						"Opens temporary file with struct definition and selects name of the struct",
+						"User is asked every time to select destination of struct definition"
+					]
 				}
 			}
 		}
@@ -78,10 +95,10 @@
 		"test": "node ./test/runTest.js"
 	},
 	"devDependencies": {
-		"@types/vscode": "^1.55.0",
 		"@types/glob": "^7.1.3",
 		"@types/mocha": "^8.0.4",
 		"@types/node": "^12.11.7",
+		"@types/vscode": "^1.55.0",
 		"eslint": "^7.19.0",
 		"glob": "^7.1.6",
 		"mocha": "^8.2.1",
