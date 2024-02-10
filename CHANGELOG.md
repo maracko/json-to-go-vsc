@@ -2,6 +2,26 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.0.0]
+
+This is it! The big 1.0. For a long time there haven't been any updates but this is a big one. Hopefully you all enjoy them. This unfortunately also brings a reset of all settings for existing users,and removes the context menu entry, but I promise it's worth it.
+
+- Automatically convert pasted text into go type. Just copy JSON into a .go file and watch the magic! (ctrl|cmd)+z allows you to easily undo the change.
+  There are some additional settings you can configure like being prompted for type name before the conversion happens (on by default)
+- Save conversion to your home folder. New setting will allow you to have a history of all conversions in simple markdown files containing source and result of the run.
+- Updated mholt/json-to-go to its current master branch
+- Switch to yarn
+- Output selection. Now includes clipboard, current file and the previous default temporary file(now editor only, not tmp in filesystem)
+  - The old `inputSource` setting has been renamed to `input` under the `io` key
+- Improved error handling, now including more and more detailed messages
+- Refactors pretty much the entire code and fixes existing bug prone code such as the use of setTimeout. Also adds documentation to pretty much everything
+- You can now set custom type name and be prompted for one when pasting
+- Add omitEmpty to JSON tags
+- You can disable auto select of type name which was occurring before
+- Clean sample test runner and add jest unit test for type function
+- Context menu setting removed
+- Reset all settings for users of v0.3.1 or lower
+
 ## [0.3.1]
 
 - Update mholt/json-to-go dep. to latest version
@@ -9,14 +29,14 @@ All notable changes to the "json-to-go" extension will be documented in this fil
 ## [0.3.0]
 
 - Now supports converting from clipboard. On first run it will ask you the data source.
-Afterwards it will offer to save your selection (or to never bother you with the 'remember choice' again).
-Data source can always be changed in the extension settings.
+  Afterwards it will offer to save your selection (or to never bother you with the 'remember choice' again).
+  Data source can always be changed in the extension settings.
 - You can now easily show the context menu always by including `"*"` inside the `json-to-go.contextMenu.supportedLanguages` setting array.
 - Moved readme images inside the repo.
 - Added license.
 
-
 ## [0.0.2]
+
 ### Added
 
 - You can now configure whether structs should be in-line or not
@@ -24,4 +44,5 @@ Data source can always be changed in the extension settings.
 - After execution type name will automatically be selected so you can change it
 
 ## [0.0.1]
+
 ### Initial release
