@@ -2,6 +2,10 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.0.1]
+
+- Small hotfix for workspace showing up as "undefined" inside saved conversions markdown files
+
 ## [1.0.0]
 
 This is it! The big 1.0. For a long time there haven't been any updates but this is a big one. Hopefully you all enjoy them. This unfortunately also brings a reset of all settings for existing users,and removes the context menu entry, but I promise it's worth it.

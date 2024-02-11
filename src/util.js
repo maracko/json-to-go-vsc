@@ -71,12 +71,19 @@ function convertText(text, typeName) {
 async function saveConversion(json, go, { addPackage = true, workspaceName } = {}) {
   addPackage && (go = `package model\n\n\n${go}`);
   let parts = [os.homedir(), `.${keys.jsonToGo}-history`];
-  workspaceName
-    ? parts.push(workspaceName)
-    : vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0
-    ? parts.push(vscode.workspace.workspaceFolders[0].name)
-    : parts.push('no-workspace');
-  parts.push(`${Date.now()}-${keys.jsonToGo}-conversion.md`);
+
+  workspaceName = workspaceName || '';
+  switch (true) {
+    case workspaceName.length > 0:
+      break;
+    case vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0:
+      workspaceName = vscode.workspace.workspaceFolders[0].name;
+      break;
+    default:
+      workspaceName = 'no-workspace';
+      break;
+  }
+  parts.push(workspaceName, `${Date.now()}-${keys.jsonToGo}-conversion.md`);
   let fUri = vscode.Uri.file(path.join(...parts));
 
   // Create markdown content

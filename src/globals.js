@@ -96,10 +96,6 @@ const keys = {
     inlineTypeDefinitions: 'inlineTypeDefinitions',
     generatedTypeName: 'generatedTypeName',
     saveConversions: 'saveConversions',
-    contextMenu: {
-      self: 'contextMenu',
-      supportedLanguages: 'contextMenu.supportedLanguages',
-    },
     io: {
       /**
        * @deprecated replaced by input
