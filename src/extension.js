@@ -263,7 +263,7 @@ async function initCtx(reset = false) {
 
   let defVals = { ...def.perm, ...def.tmp };
   for (let [k, v] of Object.entries(defVals)) {
-    if (reset || k in def.tmp || (type(g.ctx.globalState.get(lKey(k, ':')), enums.T.undefined) && (await g.ctx.globalState.update(lKey(k), v)))) {
+    if (reset || k in def.tmp || (type(g.ctx.globalState.get(lKey(k)), enums.T.undefined) && (await g.ctx.globalState.update(lKey(k), v)))) {
       await g.ctx.globalState.update(lKey(k), v);
     }
   }

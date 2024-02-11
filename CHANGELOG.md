@@ -2,9 +2,11 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
-## [1.0.1]
+## [1.0.102]
 
-- Small hotfix for workspace showing up as "undefined" inside saved conversions markdown files
+hotfix:
+  - workspace showing up as "undefined" inside saved conversions markdown files
+  - typo in initCtx
 
 ## [1.0.0]
 
