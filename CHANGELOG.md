@@ -2,11 +2,22 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.0.103]
+
+- cleanup the dispose process of globals
+- add back gif instead of video in readme
+
 ## [1.0.102]
 
 hotfix:
-  - workspace showing up as "undefined" inside saved conversions markdown files
-  - typo in initCtx
+
+- typo in initCtx
+
+### [1.0.1]
+
+hotfix:
+
+- workspace showing up as "undefined" inside saved conversions markdown files
 
 ## [1.0.0]
 

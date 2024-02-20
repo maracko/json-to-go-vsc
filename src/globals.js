@@ -173,10 +173,6 @@ function ListenerController() {
   return this;
 }
 
-function isFunc(x) {
-  return type(x, enums.T.function).valueOf();
-}
-
 /**
  * @typedef {Object} Listeners Object containing all active ListenerController instances and in turn all active listeners.
  * @property {ListenerController} [onDidChangeTextDocument] A ListenerController instance.
@@ -200,43 +196,27 @@ function isFunc(x) {
  * @returns {GlobalDisposable} A new GlobalDisposable object.
  */
 function newGlobals(input = {}) {
-  let t = type(input, enums.T.object, enums.T.null);
-  if (!t.allTypes.includes(enums.T.object) || t.allTypes.includes(enums.T.null)) input = {};
+  if (!isObj(input)) input = {};
   let nDisp = 0;
-
-  let g = {
+  const timesDisposed = () => nDisp;
+  let daRealG = {
     ...deepCopy(input),
+    disposables: [],
+    li: newLi(),
+    timesDisposed: timesDisposed,
     dispose: function () {
-      for (let disp in this.disposables) {
-        if (type(disp.dispose, enums.T.function)) disp.dispose();
-      }
-      for (let prop in this) {
-        this.hasOwnProperty(prop) && !['dispose', 'disposables'].includes(prop) && delete this[prop];
-      }
+      deepDispose(this, ['dispose', 'timesDisposed']);
+      this.disposables = [];
+      this.li = newLi();
       nDisp++;
-      return nDisp;
-    },
-    timesDisposed: () => {
       return nDisp;
     },
   };
 
-  if (!Object(g).hasOwnProperty(keys.li.self)) {
-    g.li = {
-      onDidChangeTextDocument: new ListenerController(),
-      onDidChangeConfiguration: new ListenerController(),
-      onDidChangeActiveTextEditor: new ListenerController(),
-    };
-  }
-
-  if (!Object(g).hasOwnProperty(keys.disposables) || !Array.isArray(g.disposables)) {
-    g.disposables = [];
-  }
-
-  return new Proxy(g, {
+  return new Proxy(daRealG, {
     set: function (target, key, value) {
       if (key in target) {
-        console.error(`json-to-go: GlobalDisposable: cannot set '${String(key)}', it is already set to: '${value}'`);
+        console.error(`json-to-go: GlobalDisposable: cannot set '${String(key)}', it is already set to: '${JSON.stringify(target[key])}'`);
         return false;
       }
       target[key] = value;
@@ -249,6 +229,48 @@ function newGlobals(input = {}) {
       return target[prop];
     },
   });
+}
+
+function isFunc(x) {
+  return type(x, enums.T.function).valueOf();
+}
+
+/** excludes null */
+function isObj(x) {
+  const t = type(x, enums.T.object);
+  return t.valueOf() && !t.allTypes.includes(enums.T.null);
+}
+
+function newLi() {
+  return {
+    onDidChangeTextDocument: new ListenerController(),
+    onDidChangeActiveTextEditor: new ListenerController(),
+    onDidChangeConfiguration: new ListenerController(),
+  };
+}
+
+function deepDispose(obj, topWhitelist = [], depth = 0) {
+  if (!isObj(obj)) return;
+
+  if (Array.isArray(obj)) {
+    for (let val of obj) {
+      if (val && isFunc(val.dispose)) val.dispose();
+      else if (isObj(val)) deepDispose(val, depth + 1);
+    }
+    return;
+  }
+
+  for (let [key, val] in Object.values(obj)) {
+    if (topWhitelist.includes(key) && depth == 0) continue;
+    if (key == 'dispose' && isFunc(val)) {
+      val();
+      continue;
+    } else if (isObj(val) && isFunc(val.dispose)) {
+      val.dispose();
+      continue;
+    }
+    if (isObj(val)) deepDispose(val, depth + 1);
+  }
 }
 
 module.exports = {

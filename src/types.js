@@ -72,7 +72,6 @@ function type(obj, ...check) {
   return r;
 }
 
-// uniqueSortedArray
 function uniqueSortedArray(arr) {
   return [...new Set(arr)].sort();
 }
