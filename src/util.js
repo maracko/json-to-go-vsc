@@ -106,6 +106,17 @@ function weirdThrow(weird) {
   else throw new Error('Something is weird');
 }
 
+/**
+ * Simple check to determine if a string is semi-valid JSON array or object.
+ * @param {string} str The string to check.
+ * @returns {boolean} True if the string is complex JSON, false otherwise.
+ */
+function isComplexJSON(str) {
+  return (
+    typeof str === 'string' && ((str.charAt(0) === '{' && str.charAt(str.length - 1) === '}') || (str.charAt(0) === '[' && str.charAt(str.length - 1) === ']'))
+  );
+}
+
 module.exports = {
   capStr,
   capValues,
@@ -113,4 +124,5 @@ module.exports = {
   lKey,
   saveConversion,
   weirdThrow,
+  isComplexJSON,
 };
