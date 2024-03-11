@@ -4,9 +4,7 @@
 
 #### It exposes multiple commands that can be run through the pallete or added to a hotkey. The base command is `JSON to Go: Convert`.
 
-#### By default the extension will convert JSON automatically when pasting into a Go file.
-
-## Now automatically converts when pasting valid JSON into a Go file!
+#### By default the extension will convert complex JSON automatically when pasting into a Go file.
 
 ![Animation showing paste integration in editor](resources/readme-animation.gif)
 
