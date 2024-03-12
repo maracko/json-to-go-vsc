@@ -2,6 +2,12 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.0.201]
+
+fix:
+
+- paste integration will correctly handle UNIX/WIN EOL's and minified JSON
+
 ## [1.0.200]
 
 fix:
