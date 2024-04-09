@@ -14,8 +14,7 @@
 
 /**********/
 const vscode = require('vscode');
-const li = require('./listeners');
-const { isObj, deepCopy } = require('./util');
+const type = require('./type');
 /**********/
 
 const enums = {
@@ -120,10 +119,20 @@ const keys = {
 const g = newGlobals();
 
 /**
+ * Interface for operating listeners.
+ * @typedef {Object} ListenerController
+ * @property {() => boolean} enable Enables the listener.
+ * @property {() => boolean} dispose Disposes the listener.
+ * @property { () => (event?) } listener The underlying listener function.
+ * @property {() => (event?)} source The source of the events.
+ * @property {() => string} name The name of the listener.
+ */
+
+/**
  * @typedef {Object} Listeners Object containing all active ListenerController instances and in turn all active listeners.
- * @property {li.ListenerController} [onDidChangeTextDocument] A ListenerController instance.
- * @property {li.ListenerController} [onDidChangeActiveTextEditor] A ListenerController instance.
- * @property {li.ListenerController} [onDidChangeConfiguration] A ListenerController instance.
+ * @property {ListenerController} [onDidChangeTextDocument] A ListenerController instance.
+ * @property {ListenerController} [onDidChangeActiveTextEditor] A ListenerController instance.
+ * @property {ListenerController} [onDidChangeConfiguration] A ListenerController instance.
  */
 
 /**
@@ -149,9 +158,9 @@ function newGlobals(input = {}) {
     ...deepCopy(input),
     disposables: [],
     li: {
-      onDidChangeTextDocument: new li.ListenerController(),
-      onDidChangeActiveTextEditor: new li.ListenerController(),
-      onDidChangeConfiguration: new li.ListenerController(),
+      onDidChangeTextDocument: new ListenerControllerInitializer(),
+      onDidChangeActiveTextEditor: new ListenerControllerInitializer(),
+      onDidChangeConfiguration: new ListenerControllerInitializer(),
     },
     timesDisposed: timesDisposed,
     dispose: function () {
@@ -179,6 +188,81 @@ function newGlobals(input = {}) {
       return target[prop];
     },
   });
+}
+
+/**
+ * ListenerController factory function.
+ * @returns {ListenerController} A new ListenerController object.
+ */
+function ListenerControllerInitializer() {
+  let disp, list, evSrc;
+  this.enable = (li, ev) => {
+    if ((!isFunc(li) || !isFunc(ev)) && (!isFunc(list) || !isFunc(evSrc))) {
+      throw new Error(`must provide a listener and an event source, have args:[${type(li).allTypes} and ${type(ev).allTypes}]
+        `);
+    }
+
+    let validConf = false;
+    if (isFunc(li) && isFunc(ev)) {
+      list = li;
+      evSrc = ev;
+      validConf = true;
+    }
+    if (!validConf && (!isFunc(list) || !isFunc(evSrc))) {
+      throw new Error(`Invalid conf: ${JSON.stringify(this)}`);
+    }
+
+    if (disp && isFunc(disp.dispose)) {
+      disp.dispose();
+    }
+    disp = evSrc(list, this, g.ctx.subscriptions);
+    console.log(`ListenerController: ${this.name()} enabled`);
+    return true;
+  };
+  this.listener = () => list;
+  this.name = () => list.name;
+  this.source = () => evSrc;
+  this.dispose = () => {
+    let op = false;
+    if (disp && isFunc(disp.dispose)) {
+      disp.dispose();
+      disp = undefined;
+      op = true;
+      console.log(`ListenerController: ${this.name()} disposed`);
+    }
+    return op;
+  };
+
+  return this;
+}
+
+/**
+ * Recursively creates a copy of an object or array.
+ * @template T
+ * @param {T} obj The object to be copied.
+ * @returns {T} The deep copy of the input, or at least I hope so.
+ */
+function deepCopy(obj) {
+  if (!type(obj, 'object') || type(obj, 'null')) return obj;
+
+  let copy = Array.isArray(obj) ? [] : {};
+  for (let key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      copy[key] = deepCopy(obj[key]);
+    }
+  }
+
+  return copy;
+}
+
+/** excludes null */
+function isObj(x) {
+  const t = type(x, enums.T.object);
+  return t.valueOf() && !t.allTypes.includes(enums.T.null);
+}
+
+function isFunc(x) {
+  return type(x, enums.T.function).valueOf();
 }
 
 module.exports = {

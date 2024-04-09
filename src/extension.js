@@ -322,7 +322,7 @@ async function handleErr(error) {
     console.error(`Error: An unknown error occurred in JSON to Go: ${JSON.stringify(error)}`);
     return;
   }
-  let errStr = `Error: | Name: "${error.name}" | Message: "${error.message}" | Stack: "${error.stack}"`;
+  let errStr = `Error:\nName: "${error.name}"\nMessage: "${error.message}"\nStack: "${error.stack}"`;
   console.error(errStr);
   vscode.window.showErrorMessage(`An error occurred in JSON to Go: ${error.message}`, enums.Button.ShowDetails).then((btn) => {
     if (btn === enums.Button.ShowDetails) {

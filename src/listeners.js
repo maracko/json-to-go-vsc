@@ -13,65 +13,10 @@
  */
 
 /**********/
-const { lKey, convertText, saveConversion, isComplexJSON, isFunc } = require('./util');
+const { lKey, convertText, saveConversion, isComplexJSON } = require('./util');
 const { keys, g, vscode, enums } = require('./globals');
 const type = require('./type');
 /**********/
-
-/**
- * Interface for operating listeners.
- * @typedef {Object} ListenerController
- * @property {() => boolean} enable Enables the listener.
- * @property {() => boolean} dispose Disposes the listener.
- * @property { () => (event?) } listener The underlying listener function.
- * @property {() => (event?)} source The source of the events.
- * @property {() => string} name The name of the listener.
- */
-/**
- * ListenerController factory function.
- * @returns {ListenerController} A new ListenerController object.
- */
-function ListenerController() {
-  let disp, list, evSrc;
-  this.enable = (li, ev) => {
-    if ((!isFunc(li) || !isFunc(ev)) && (!isFunc(list) || !isFunc(evSrc))) {
-      throw new Error(`must provide a listener and an event source, have args:[${type(li).allTypes} and ${type(ev).allTypes}]
-        `);
-    }
-
-    let validConf = false;
-    if (isFunc(li) && isFunc(ev)) {
-      list = li;
-      evSrc = ev;
-      validConf = true;
-    }
-    if (!validConf && (!isFunc(list) || !isFunc(evSrc))) {
-      throw new Error(`Invalid conf: ${JSON.stringify(this)}`);
-    }
-
-    if (disp && isFunc(disp.dispose)) {
-      disp.dispose();
-    }
-    disp = evSrc(list, this, g.ctx.subscriptions);
-    console.log(`ListenerController: ${this.name()} enabled`);
-    return true;
-  };
-  this.listener = () => list;
-  this.name = () => list.name;
-  this.source = () => evSrc;
-  this.dispose = () => {
-    let op = false;
-    if (disp && isFunc(disp.dispose)) {
-      disp.dispose();
-      disp = undefined;
-      op = true;
-      console.log(`ListenerController: ${this.name()} disposed`);
-    }
-    return op;
-  };
-
-  return this;
-}
 
 /**
  * Listens for text changes in the active editor and converts the text to Go struct if the text matches the clipboard text, is valid JSON and the language is configured inside settings.
@@ -167,5 +112,4 @@ module.exports = {
   onDidChangeConfigurationListener,
   onDidChangeTextDocumentListener,
   updatePasteContext,
-  ListenerController,
 };
