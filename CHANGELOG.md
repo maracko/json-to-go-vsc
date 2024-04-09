@@ -2,6 +2,14 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.1.0]
+
+- added github actions ci/cd
+
+fix:
+
+- various minor bugfixes and refactors
+
 ## [1.0.201]
 
 fix:

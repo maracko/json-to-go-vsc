@@ -6,7 +6,7 @@ on:
       - '*'
 
 jobs:
-  build:
+  build_and_release:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,22 +24,19 @@ jobs:
       - name: Build extension
         run: npm run build
 
+      - name: Extract release notes
+        run: |
+          VERSION=$(echo ${{ github.ref }} | sed -e 's/refs\/tags\///g')
+          sed -n "/## \[$VERSION\]/,/## \[[0-9]*\.[0-9]*\.[0-9]*\]/p" CHANGELOG.md | perl -pe 'BEGIN{undef $/;} s/\n## \[[0-9]*\.[0-9]*\.[0-9]*\]\n/\n/sg' > RELEASE_NOTES.md
+
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          body_path: RELEASE_NOTES.md
           files: |
             *.vsix
-        if: startsWith(github.ref, 'refs/tags/')
-
-      - name: Publish release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
           draft: false
           prerelease: false
         if: startsWith(github.ref, 'refs/tags/')
