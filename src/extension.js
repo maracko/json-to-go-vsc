@@ -14,7 +14,7 @@
 
 /**********/
 const li = require('./listeners');
-const { type } = require('./types');
+const type = require('./type');
 const { keys, enums, g, vscode } = require('./globals');
 const { lKey, weirdThrow, convertText, capStr, capValues, saveConversion } = require('./util');
 /**********/
@@ -27,7 +27,7 @@ async function activate(ctx) {
   try {
     g.ctx = ctx;
     await initCtx();
-    await li.updatePasteContext();
+    let { langs: pasteIntegrationLangs } = await li.updatePasteContext();
 
     // reset for <= 0.3.1
     if (g.cfg.get(keys.settings.io.inputSource)) {
@@ -46,7 +46,7 @@ async function activate(ctx) {
     g.li.onDidChangeTextDocument.enable(li.onDidChangeTextDocumentListener, (li, thisArg, disposables) =>
       vscode.workspace.onDidChangeTextDocument(li, thisArg, disposables)
     );
-    g.cfg.get(keys.settings.pasteIntegration.supportedLanguages).length > 0 ? g.li.onDidChangeTextDocument.enable() : g.li.onDidChangeTextDocument.dispose();
+    pasteIntegrationLangs.length > 0 ? g.li.onDidChangeTextDocument.enable() : g.li.onDidChangeTextDocument.dispose();
 
     ctx.subscriptions.push(
       vscode.commands.registerCommand(lKey(keys.cmd.convert), async () => {
@@ -240,35 +240,28 @@ async function convert(fresh = false) {
   }
 }
 /**
- * Initializes the context for the extension.
- * @param {boolean} [reset=false] - Indicates whether to reset the context values.
- * @returns {Promise<Object>} - A promise that resolves to the default context values.
+ * Initializes and optionally resets the context for the extension.
+ * @param {boolean} [reset=false] Indicates whether to reset the context values.
+ * @returns {Promise<Object>} A promise that resolves to the default context values.
  */
 async function initCtx(reset = false) {
   let def = {
-    perm: {
-      [keys.ctx.perm.askRememberInput]: true,
-      [keys.ctx.perm.askRememberOutput]: true,
-      [keys.ctx.perm.notifyClipboardOutput]: true,
-    },
-    tmp: {
-      [keys.ctx.tmp.pasteIntegrationLangs]: ['go'],
-      [keys.ctx.tmp.promptForStructName]: true,
-    },
+    // perm
+    [keys.ctx.perm.askRememberInput]: true,
+    [keys.ctx.perm.askRememberOutput]: true,
+    [keys.ctx.perm.notifyClipboardOutput]: true,
+    // temp
+    [keys.ctx.temp.pasteIntegrationLangs]: ['go'],
+    [keys.ctx.temp.promptForStructName]: true,
   };
 
-  if (reset) {
-    await g.ctx.globalState.update(lKey(keys.ctx.editor.contextMenuVisible, ':'), undefined);
-  }
-
-  let defVals = { ...def.perm, ...def.tmp };
-  for (let [k, v] of Object.entries(defVals)) {
-    if (reset || k in def.tmp || (type(g.ctx.globalState.get(lKey(k)), enums.T.undefined) && (await g.ctx.globalState.update(lKey(k), v)))) {
+  for (let [k, v] of Object.entries(def)) {
+    if (reset || type(g.ctx.globalState.get(lKey(k)), enums.T.undefined)) {
       await g.ctx.globalState.update(lKey(k), v);
     }
   }
 
-  return Promise.resolve(defVals);
+  return Promise.resolve(def);
 }
 
 async function resetAllSettings(force = false) {
@@ -292,7 +285,7 @@ async function resetAllSettings(force = false) {
     return await li.updatePasteContext();
   };
   if (force) {
-    reset();
+    await reset();
     return Promise.resolve();
   }
   let btn = await vscode.window.showInformationMessage(
@@ -326,7 +319,7 @@ function openSettingsWindow() {
  */
 async function handleErr(error) {
   if (!error || !type(error, 'object') || !type(error.message, 'string')) {
-    console.error(`Error: An unknown (error == '${JSON.stringify(error)}') occurred in JSON to Go`);
+    console.error(`Error: An unknown error occurred in JSON to Go: ${JSON.stringify(error)}`);
     return;
   }
   let errStr = `Error: | Name: "${error.name}" | Message: "${error.message}" | Stack: "${error.stack}"`;

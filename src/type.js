@@ -76,23 +76,4 @@ function uniqueSortedArray(arr) {
   return [...new Set(arr)].sort();
 }
 
-/**
- * Recursively creates a copy of an object or array.
- * @template T
- * @param {T} obj The object to be copied.
- * @returns {T} The deep copy of the input, or at least I hope so.
- */
-function deepCopy(obj) {
-  if (!type(obj, 'object') || type(obj, 'null')) return obj;
-
-  let copy = Array.isArray(obj) ? [] : {};
-  for (let key in obj) {
-    if (obj.hasOwnProperty(key)) {
-      copy[key] = deepCopy(obj[key]);
-    }
-  }
-
-  return copy;
-}
-
-module.exports = { type, deepCopy };
+module.exports = type;

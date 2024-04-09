@@ -16,7 +16,8 @@
 const os = require('os');
 const path = require('path');
 const jsonToGo = require('../json-to-go');
-const { g, keys, vscode } = require('./globals');
+const type = require('./type');
+const { g, enums, keys, vscode } = require('./globals');
 /**********/
 
 /**
@@ -117,6 +118,35 @@ function isComplexJSON(str) {
   );
 }
 
+function isFunc(x) {
+  return type(x, enums.T.function).valueOf();
+}
+
+/** excludes null */
+function isObj(x) {
+  const t = type(x, enums.T.object);
+  return t.valueOf() && !t.allTypes.includes(enums.T.null);
+}
+
+/**
+ * Recursively creates a copy of an object or array.
+ * @template T
+ * @param {T} obj The object to be copied.
+ * @returns {T} The deep copy of the input, or at least I hope so.
+ */
+function deepCopy(obj) {
+  if (!type(obj, 'object') || type(obj, 'null')) return obj;
+
+  let copy = Array.isArray(obj) ? [] : {};
+  for (let key in obj) {
+    if (obj.hasOwnProperty(key)) {
+      copy[key] = deepCopy(obj[key]);
+    }
+  }
+
+  return copy;
+}
+
 module.exports = {
   capStr,
   capValues,
@@ -125,4 +155,7 @@ module.exports = {
   saveConversion,
   weirdThrow,
   isComplexJSON,
+  isFunc,
+  isObj,
+  deepCopy,
 };
