@@ -1,4 +1,4 @@
-const { type } = require('../../src/type');
+const type = require('../../src/type');
 
 const typeTestCases = [
   { value: null, typeName: 'null', expectedTypes: ['null', 'object'] },
