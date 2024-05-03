@@ -42,7 +42,6 @@ async function activate(ctx) {
     }
 
     g.li.onDidChangeConfiguration.enable(li.onDidChangeConfigurationListener, vscode.workspace.onDidChangeConfiguration);
-    g.li.onDidChangeActiveTextEditor.enable(li.onDidChangeActiveTextEditorListener, vscode.window.onDidChangeActiveTextEditor);
     g.li.onDidChangeTextDocument.enable(li.onDidChangeTextDocumentListener, (li, thisArg, disposables) =>
       vscode.workspace.onDidChangeTextDocument(li, thisArg, disposables)
     );

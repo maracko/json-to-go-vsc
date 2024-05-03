@@ -86,7 +86,6 @@ async function saveConversion(json, go, { addPackage = true, workspaceName } = {
   parts.push(workspaceName, `${Date.now()}-${keys.jsonToGo}-conversion.md`);
   let fUri = vscode.Uri.file(path.join(...parts));
 
-  // Create markdown content
   let md = `# JSON-to-Go conversion\n\n`;
   md += `Date: ${new Date().toUTCString()}\n\n`;
   md += `Workspace: ${workspaceName}\n\n`;

@@ -65,7 +65,7 @@ async function onDidChangeTextDocumentListener(ev) {
     if (g.cfg.get(keys.settings.saveConversions)) await saveConversion(changeTxt, struct.go, { addPackage: true });
   }
 
-  return await Promise.resolve();
+  return Promise.resolve();
 }
 
 /**
@@ -78,10 +78,6 @@ async function onDidChangeConfigurationListener(ev) {
     langs.length > 0 ? await g.li.onDidChangeTextDocument.enable() : await g.li.onDidChangeTextDocument.dispose();
   }
 
-  return Promise.resolve();
-}
-
-async function onDidChangeActiveTextEditorListener() {
   return Promise.resolve();
 }
 
@@ -108,7 +104,6 @@ async function updatePasteContext() {
 }
 
 module.exports = {
-  onDidChangeActiveTextEditorListener,
   onDidChangeConfigurationListener,
   onDidChangeTextDocumentListener,
   updatePasteContext,

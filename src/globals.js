@@ -131,7 +131,6 @@ const g = newGlobals();
 /**
  * @typedef {Object} Listeners Object containing all active ListenerController instances and in turn all active listeners.
  * @property {ListenerController} [onDidChangeTextDocument] A ListenerController instance.
- * @property {ListenerController} [onDidChangeActiveTextEditor] A ListenerController instance.
  * @property {ListenerController} [onDidChangeConfiguration] A ListenerController instance.
  */
 
@@ -159,7 +158,6 @@ function newGlobals(input = {}) {
     disposables: [],
     li: {
       onDidChangeTextDocument: new ListenerControllerInitializer(),
-      onDidChangeActiveTextEditor: new ListenerControllerInitializer(),
       onDidChangeConfiguration: new ListenerControllerInitializer(),
     },
     timesDisposed: timesDisposed,
