@@ -2,6 +2,17 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.2.0]
+
+- updated the readme animation to include keystrokes
+- github release notes won't duplicate version number in the body anymore
+
+fix:
+
+- broken import in the test suite
+- typo where Promise being returned was awaited
+- removed all references to the unused listener `onDidChangeActiveTextEditor`
+
 ## [1.1.0]
 
 - added github actions ci/cd
