@@ -2,6 +2,11 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.2.1]
+
+- modified saved conversions format a bit to make it cleaner
+- fixed readme link pointing to old release
+
 ## [1.2.0]
 
 - updated the readme animation to include keystrokes

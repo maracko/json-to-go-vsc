@@ -64,11 +64,11 @@ function convertText(text, typeName) {
  * @param {String} json The input JSON.
  * @param {String} go The output Go struct.
  * @param {Object} [options] Additional options.
- * @param {boolean} [options.addPackage] Indicates whether the output needs a package declaration.
- * @param {string} [options.workspaceName] The name of the workspace to save the file in.
+ * @param {boolean} [options.addPackage] Indicates whether the output contains a package declaration.
+ * @param {string} [options.workspaceName] Conversion workspace name. By default reads the name of the first folder in the workspace.
  * @returns {Promise<string>} A promise containing the filled out template.
  */
-async function saveConversion(json, go, { addPackage = true, workspaceName } = {}) {
+async function saveConversion(json, go, { addPackage = false, workspaceName } = {}) {
   addPackage && (go = `package model\n\n\n${go}`);
   let parts = [os.homedir(), `.${keys.jsonToGo}-history`];
 
@@ -87,8 +87,8 @@ async function saveConversion(json, go, { addPackage = true, workspaceName } = {
   let fUri = vscode.Uri.file(path.join(...parts));
 
   let md = `# JSON-to-Go conversion\n\n`;
-  md += `Date: ${new Date().toUTCString()}\n\n`;
-  md += `Workspace: ${workspaceName}\n\n`;
+  md += `## Date: ${new Date().toUTCString()}\n\n`;
+  md += `## Workspace: ${workspaceName}\n\n`;
   md += '```go\n' + go + '\n```\n\n';
   md += '```json\n' + json + '\n```\n';
 

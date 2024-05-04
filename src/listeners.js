@@ -62,7 +62,7 @@ async function onDidChangeTextDocumentListener(ev) {
     );
     edit.replace(ev.document.uri, replaceRange, struct.go);
     await vscode.workspace.applyEdit(edit);
-    if (g.cfg.get(keys.settings.saveConversions)) await saveConversion(changeTxt, struct.go, { addPackage: true });
+    if (g.cfg.get(keys.settings.saveConversions)) await saveConversion(changeTxt, struct.go);
   }
 
   return Promise.resolve();
