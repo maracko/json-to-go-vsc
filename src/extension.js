@@ -14,7 +14,7 @@
 
 /**********/
 const li = require('./listeners');
-const type = require('./type');
+const { type } = require('./type');
 const { keys, enums, g, vscode } = require('./globals');
 const { lKey, weirdThrow, convertText, capStr, capValues, saveConversion } = require('./util');
 /**********/
@@ -45,6 +45,7 @@ async function activate(ctx) {
     g.li.onDidChangeTextDocument.enable(li.onDidChangeTextDocumentListener, (li, thisArg, disposables) =>
       vscode.workspace.onDidChangeTextDocument(li, thisArg, disposables)
     );
+
     pasteIntegrationLangs.length > 0 ? g.li.onDidChangeTextDocument.enable() : g.li.onDidChangeTextDocument.dispose();
 
     ctx.subscriptions.push(
@@ -103,43 +104,44 @@ async function convert(fresh = false) {
             placeHolder: 'Remember input?',
           });
           switch (rememberInput) {
-            case enums.Button.Remember.Yes:
-              g.cfg.update(keys.settings.io.input, input, vscode.ConfigurationTarget.Global);
-              break;
-            case enums.Button.Remember.DontAsk:
-              g.ctx.globalState.update(lKey(keys.ctx.perm.askRememberInput), false);
-              break;
-            case undefined:
-            case enums.Button.Remember.No:
-              break;
-            default:
-              weirdThrow(`Remember input: "${rememberInput}"`);
+          case enums.Button.Remember.Yes:
+            g.cfg.update(keys.settings.io.input, input, vscode.ConfigurationTarget.Global);
+            break;
+          case enums.Button.Remember.DontAsk:
+            g.ctx.globalState.update(lKey(keys.ctx.perm.askRememberInput), false);
+            break;
+          case undefined:
+          case enums.Button.Remember.No:
+            break;
+          default:
+            weirdThrow(`Remember input: "${rememberInput}"`);
           }
         }
       }
     }
 
     switch (input) {
-      case enums.input.selection:
-        let editor = vscode.window.activeTextEditor;
-        if (!editor) {
-          vscode.window.showErrorMessage('No editor active for input');
-          return;
-        }
-        txt = editor.document.getText(editor.selection);
-        break;
-      case enums.input.clipboard:
-        txt = await vscode.env.clipboard.readText();
-        break;
-      case enums.input.currentFile:
-        if (!vscode.window.activeTextEditor) {
-          vscode.window.showErrorMessage('No editor active for input');
-          return;
-        }
-        txt = vscode.window.activeTextEditor.document.getText();
-        break;
-      default:
-        weirdThrow(`Input: "${input}"`);
+    case enums.input.selection: {
+      let editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showErrorMessage('No editor active for input');
+        return;
+      }
+      txt = editor.document.getText(editor.selection);
+      break;
+    }
+    case enums.input.clipboard:
+      txt = await vscode.env.clipboard.readText();
+      break;
+    case enums.input.currentFile:
+      if (!vscode.window.activeTextEditor) {
+        vscode.window.showErrorMessage('No editor active for input');
+        return;
+      }
+      txt = vscode.window.activeTextEditor.document.getText();
+      break;
+    default:
+      weirdThrow(`Input: "${input}"`);
     }
 
     if (!txt) {
@@ -174,70 +176,75 @@ async function convert(fresh = false) {
             placeHolder: 'Remember output?',
           });
           switch (rememberOutput) {
-            case enums.Button.Remember.Yes:
-              g.cfg.update(keys.settings.io.output, output, vscode.ConfigurationTarget.Global);
-              break;
-            case enums.Button.Remember.DontAsk:
-              g.ctx.globalState.update(lKey(keys.ctx.perm.askRememberOutput), false);
-              break;
-            case undefined:
-            case enums.Button.Remember.No:
-              break;
-            default:
-              weirdThrow(`Remember output "${rememberOutput}"`);
+          case enums.Button.Remember.Yes:
+            g.cfg.update(keys.settings.io.output, output, vscode.ConfigurationTarget.Global);
+            break;
+          case enums.Button.Remember.DontAsk:
+            g.ctx.globalState.update(lKey(keys.ctx.perm.askRememberOutput), false);
+            break;
+          case undefined:
+          case enums.Button.Remember.No:
+            break;
+          default:
+            weirdThrow(`Remember output "${rememberOutput}"`);
           }
         }
       }
     }
     switch (output) {
-      case enums.output.clipboard:
-        await vscode.env.clipboard.writeText(struct.go);
-        if (g.ctx.globalState.get(lKey(keys.ctx.perm.notifyClipboardOutput)))
-          vscode.window.showInformationMessage('Go struct copied to clipboard', enums.Button.DontShowAgain).then((btn) => {
-            if (btn === enums.Button.DontShowAgain) {
-              g.ctx.globalState.update(lKey(keys.ctx.perm.notifyClipboardOutput), false);
-              g.cfg.update(keys.ctx.perm.notifyClipboardOutput, false, vscode.ConfigurationTarget.Global);
-            }
-          });
-        break;
-      case enums.output.cursorPosition:
-        let editor = vscode.window.activeTextEditor;
-        if (!editor) {
-          vscode.window.showErrorMessage('No editor active for output');
-          return;
-        }
-        editor.edit((editBuilder) => {
-          editBuilder.insert(editor.selection.active, struct.go);
+    case enums.output.clipboard:
+      await vscode.env.clipboard.writeText(struct.go);
+      if (g.ctx.globalState.get(lKey(keys.ctx.perm.notifyClipboardOutput)))
+        vscode.window.showInformationMessage('Go struct copied to clipboard', enums.Button.DontShowAgain).then((btn) => {
+          if (btn === enums.Button.DontShowAgain) {
+            g.ctx.globalState.update(lKey(keys.ctx.perm.notifyClipboardOutput), false);
+            g.cfg.update(keys.ctx.perm.notifyClipboardOutput, false, vscode.ConfigurationTarget.Global);
+          }
         });
-        break;
-      case enums.output.temporaryFile:
-        let doc = await vscode.workspace.openTextDocument({
-          language: 'go',
-          content: struct.go,
-        });
-        await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, false);
-        if (g.cfg.get(keys.settings.autoSelectTypeName)) {
-          await vscode.commands.executeCommand('cursorMove', {
-            to: 'right',
-            by: 'character',
-            value: 5,
-          });
-          await vscode.commands.executeCommand('cursorMove', {
-            to: 'right',
-            by: 'character',
-            value: g.cfg.get(keys.settings.generatedTypeName).length,
-            select: true,
-          });
-        }
+      break;
+    case enums.output.cursorPosition: {
+      let editor = vscode.window.activeTextEditor;
+      if (!editor) {
+        vscode.window.showErrorMessage('No editor active for output');
+        return;
+      }
+      editor.edit((editBuilder) => {
+        editBuilder.insert(editor.selection.active, struct.go);
+      });
+      break;
     }
+    case enums.output.temporaryFile: {
+      let doc = await vscode.workspace.openTextDocument({
+        language: 'go',
+        content: struct.go,
+      });
+      await vscode.window.showTextDocument(doc, vscode.ViewColumn.Beside, false);
+      if (g.cfg.get(keys.settings.autoSelectTypeName)) {
+        await vscode.commands.executeCommand('cursorMove', {
+          to: 'right',
+          by: 'character',
+          value: 5,
+        });
+        await vscode.commands.executeCommand('cursorMove', {
+          to: 'right',
+          by: 'character',
+          value: g.cfg.get(keys.settings.generatedTypeName).length,
+          select: true,
+        });
+      }
 
-    if (g.cfg.get(keys.settings.saveConversions)) {
-      await saveConversion(txt, struct.go);
+
+      if (g.cfg.get(keys.settings.saveConversions)) {
+        await saveConversion(txt, struct.go);
+      }
+    }
     }
   } catch (err) {
     handleErr(err);
   }
 }
+
+
 /**
  * Initializes and optionally resets the context for the extension.
  * @param {boolean} [reset=false] Indicates whether to reset the context values.
@@ -253,9 +260,8 @@ async function initCtx(reset = false) {
     [keys.ctx.temp.pasteIntegrationLangs]: ['go'],
     [keys.ctx.temp.promptForStructName]: true,
   };
-
   for (let [k, v] of Object.entries(def)) {
-    if (reset || type(g.ctx.globalState.get(lKey(k)), enums.T.undefined)) {
+    if (reset || type(g.ctx.globalState.get(lKey(k))).is(enums.T.undefined)) {
       await g.ctx.globalState.update(lKey(k), v);
     }
   }
@@ -283,10 +289,12 @@ async function resetAllSettings(force = false) {
     await initCtx(true);
     return await li.updatePasteContext();
   };
+
   if (force) {
     await reset();
     return Promise.resolve();
   }
+
   let btn = await vscode.window.showInformationMessage(
     enums.Button.AreYouSure,
     {
@@ -296,13 +304,13 @@ async function resetAllSettings(force = false) {
     enums.Button.Confirm
   );
   switch (btn) {
-    case enums.Button.Cancel:
-    case undefined:
-      break;
-    case enums.Button.Confirm:
-      await reset();
-      await openSettingsWindow();
-      break;
+  case enums.Button.Cancel:
+  case undefined:
+    break;
+  case enums.Button.Confirm:
+    await reset();
+    await openSettingsWindow();
+    break;
   }
 
   return Promise.resolve();
@@ -317,7 +325,7 @@ function openSettingsWindow() {
  * @param {Error} error - The error object.
  */
 async function handleErr(error) {
-  if (!error || !type(error, 'object') || !type(error.message, 'string')) {
+  if (!type(error).is(enums.T.object) || !type(error.message).is(enums.T.string)) {
     console.error(`Error: An unknown error occurred in JSON to Go: ${JSON.stringify(error)}`);
     return;
   }

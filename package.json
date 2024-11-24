@@ -114,9 +114,14 @@
             }
         }
     },
+    "jest": {
+        "testPathIgnorePatterns": [
+            "./node_modules/*",
+            "./json-to-go.js"
+        ]
+    },
     "scripts": {
         "lint": "eslint .",
-        "pretest": "npm run lint",
         "test": "jest",
         "build": "npx vsce package"
     },

@@ -14,7 +14,7 @@
 
 /**********/
 const vscode = require('vscode');
-const type = require('./type');
+const { type ,T} = require('./type');
 /**********/
 
 const enums = {
@@ -43,21 +43,7 @@ const enums = {
       DontAsk: "No and don't ask again",
     },
   },
-  T: {
-    array: 'array',
-    bigint: 'bigint',
-    boolean: 'boolean',
-    date: 'date',
-    error: 'error',
-    function: 'function',
-    null: 'null',
-    number: 'number',
-    object: 'object',
-    regexp: 'regexp',
-    symbol: 'symbol',
-    string: 'string',
-    undefined: 'undefined',
-  },
+  T: T,
 };
 
 const keys = {
@@ -72,10 +58,8 @@ const keys = {
       pasteIntegrationLangs: 'pasteIntegrationLangs',
       promptForStructName: 'promptForStructName',
     },
-    /**
-     * @deprecated context menu deprecated
-     */
     editor: {
+      /** @deprecated context menu deprecated */
       contextMenuVisible: 'contextMenuVisible',
     },
   },
@@ -97,9 +81,7 @@ const keys = {
     generatedTypeName: 'generatedTypeName',
     saveConversions: 'saveConversions',
     io: {
-      /**
-       * @deprecated replaced by input
-       */
+      /** @deprecated replaced by input */
       inputSource: 'inputSource',
       input: 'io.input',
       output: 'io.output',
@@ -109,7 +91,7 @@ const keys = {
       promptForTypeName: 'pasteIntegration.promptForTypeName',
       supportedLanguages: 'pasteIntegration.supportedLanguages',
     },
-  },
+  }
 };
 
 /**
@@ -121,8 +103,8 @@ const g = newGlobals();
 /**
  * Interface for operating listeners.
  * @typedef {Object} ListenerController
- * @property {() => boolean} enable Enables the listener.
- * @property {() => boolean} dispose Disposes the listener.
+ * @property {(listenerFunc?,evSrc?) => boolean} enable Enables the listener either using the provided listener and event source, or existing one, throwing an error if neither is provided.
+ * @property {() => boolean} dispose Disables the listener if it exists, returning true if so. It can be re-enabled with enable.
  * @property { () => (event?) } listener The underlying listener function.
  * @property {() => (event?)} source The source of the events.
  * @property {() => string} name The name of the listener.
@@ -140,7 +122,7 @@ const g = newGlobals();
  * @property {vscode.ExtensionContext} [ctx] The extension context provided by VS Code.
  * @property {vscode.Disposable[]} disposables All global disposables are added here
  * @property {Listeners} li An object with ListenerController instances.
- * @property {() => number} dispose A method that clears all keys except the dispose function and increments its internal timesDisposed counter.
+ * @property {() => number} dispose A method that disposes all global disposables and increments the timesDisposed counter.
  * @property {() => number} timesDisposed A method that returns the number of times the object has been disposed.
  */
 
@@ -196,7 +178,7 @@ function ListenerControllerInitializer() {
   let disp, list, evSrc;
   this.enable = (li, ev) => {
     if ((!isFunc(li) || !isFunc(ev)) && (!isFunc(list) || !isFunc(evSrc))) {
-      throw new Error(`must provide a listener and an event source, have args:[${type(li).allTypes} and ${type(ev).allTypes}]
+      throw new Error(`must provide a listener and an event source, have args:[${type(li).all} and ${type(ev).all}]
         `);
     }
 
@@ -234,6 +216,7 @@ function ListenerControllerInitializer() {
   return this;
 }
 
+
 /**
  * Recursively creates a copy of an object or array.
  * @template T
@@ -241,11 +224,11 @@ function ListenerControllerInitializer() {
  * @returns {T} The deep copy of the input, or at least I hope so.
  */
 function deepCopy(obj) {
-  if (!type(obj, 'object') || type(obj, 'null')) return obj;
+  if (!isObj(obj)) return obj;
 
   let copy = Array.isArray(obj) ? [] : {};
   for (let key in obj) {
-    if (obj.hasOwnProperty(key)) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
       copy[key] = deepCopy(obj[key]);
     }
   }
@@ -253,14 +236,12 @@ function deepCopy(obj) {
   return copy;
 }
 
-/** excludes null */
 function isObj(x) {
-  const t = type(x, enums.T.object);
-  return t.valueOf() && !t.allTypes.includes(enums.T.null);
+  return type(x).match({ is: enums.T.object, isNot: enums.T.null });
 }
 
 function isFunc(x) {
-  return type(x, enums.T.function).valueOf();
+  return type(x).is(enums.T.function);
 }
 
 module.exports = {

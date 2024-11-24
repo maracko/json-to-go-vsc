@@ -15,7 +15,7 @@
 /**********/
 const { lKey, convertText, saveConversion, isComplexJSON } = require('./util');
 const { keys, g, vscode, enums } = require('./globals');
-const type = require('./type');
+const { type } = require('./type');
 /**********/
 
 /**
@@ -27,32 +27,32 @@ async function onDidChangeTextDocumentListener(ev) {
   if (!langs.includes('*') && !langs.includes(ev.document.languageId)) {
     return Promise.resolve();
   }
+
   let clipTxt = await vscode.env.clipboard.readText();
   if (!clipTxt || clipTxt.length < 2) return Promise.resolve();
-  switch (ev.document.eol) {
-    case vscode.EndOfLine.CRLF:
-      clipTxt = clipTxt.replace(/\n/g, '\r\n').trim();
-      break;
-    case vscode.EndOfLine.LF:
-      clipTxt = clipTxt.replace(/\r\n/g, '\n').trim();
-      break;
-  }
+
+
+  let [replacePattern, lineSep] = ev.document.eol === vscode.EndOfLine.CRLF ? [/\n/g,'\r\n'] : [/\r\n/g,'\n'];
+  clipTxt = clipTxt.replace(replacePattern, lineSep).trim();
 
   for (let change of ev.contentChanges) {
     let changeTxt = change.text.trim();
     if (changeTxt.length < 2 || !isComplexJSON(changeTxt) || changeTxt !== clipTxt) continue;
+
     let structName = g.cfg.get(keys.settings.generatedTypeName);
     let struct = convertText(clipTxt, structName);
-    if (!type(struct.error, enums.T.undefined)) continue;
+    if (!type(struct.error).is(enums.T.undefined)) continue;
+
     if (g.ctx.globalState.get(lKey(keys.ctx.temp.promptForStructName))) {
       structName = await vscode.window.showInputBox({
         prompt: 'Generated Go type name',
         value: structName,
       });
+
       struct = convertText(clipTxt, structName);
     }
-    let edit = new vscode.WorkspaceEdit();
-    let lines = changeTxt.split('\n');
+
+    let lines = changeTxt.split(lineSep);
     let replaceRange = new vscode.Range(
       change.range.start,
       new vscode.Position(
@@ -60,8 +60,12 @@ async function onDidChangeTextDocumentListener(ev) {
         change.range.end.character + (lines.length > 0 ? lines[lines.length - 1].length : 0)
       )
     );
+
+    let edit = new vscode.WorkspaceEdit();
     edit.replace(ev.document.uri, replaceRange, struct.go);
+
     await vscode.workspace.applyEdit(edit);
+
     if (g.cfg.get(keys.settings.saveConversions)) await saveConversion(changeTxt, struct.go);
   }
 
@@ -93,13 +97,13 @@ async function onDidChangeConfigurationListener(ev) {
  */
 async function updatePasteContext() {
   let ctx = {
-    langs: [],
-    promptForTypeName: false,
+    langs: g.cfg.get(keys.settings.pasteIntegration.supportedLanguages) || [],
+    promptForTypeName: g.cfg.get(keys.settings.pasteIntegration.promptForTypeName) || false,
   };
-  ctx.langs = g.cfg.get(keys.settings.pasteIntegration.supportedLanguages);
-  ctx.promptForTypeName = g.cfg.get(keys.settings.pasteIntegration.promptForTypeName);
+
   await g.ctx.globalState.update(lKey(keys.ctx.temp.pasteIntegrationLangs), ctx.langs);
   await g.ctx.globalState.update(lKey(keys.ctx.temp.promptForStructName), ctx.promptForTypeName);
+
   return Promise.resolve(ctx);
 }
 

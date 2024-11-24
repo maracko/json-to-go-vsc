@@ -74,15 +74,16 @@ async function saveConversion(json, go, { addPackage = false, workspaceName } = 
 
   workspaceName = workspaceName || '';
   switch (true) {
-    case workspaceName.length > 0:
-      break;
-    case vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0:
-      workspaceName = vscode.workspace.workspaceFolders[0].name;
-      break;
-    default:
-      workspaceName = 'no-workspace';
-      break;
+  case workspaceName.length > 0:
+    break;
+  case vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0:
+    workspaceName = vscode.workspace.workspaceFolders[0].name;
+    break;
+  default:
+    workspaceName = 'no-workspace';
+    break;
   }
+
   parts.push(workspaceName, `${Date.now()}-${keys.jsonToGo}-conversion.md`);
   let fUri = vscode.Uri.file(path.join(...parts));
 
@@ -112,9 +113,11 @@ function weirdThrow(weird) {
  */
 function isComplexJSON(str) {
   return (
-    typeof str === 'string' && ((str.charAt(0) === '{' && str.charAt(str.length - 1) === '}') || (str.charAt(0) === '[' && str.charAt(str.length - 1) === ']'))
+    typeof str === 'string' &&
+        ((str.charAt(0) === '{' && str.charAt(str.length - 1) === '}') || (str.charAt(0) === '[' && str.charAt(str.length - 1) === ']'))
   );
 }
+
 
 module.exports = {
   capStr,

@@ -13,67 +13,118 @@
  */
 
 /**
- * @typedef {Object} TypeInfo An object containing type information.
- * @property {() => boolean} valueOf A function that returns the result of the check.
- * @property {string[]} allTypes A function that returns an array of all types matched.
- * @property {string[]} checkTypes Input types to check against.
+ * @typedef {Object} TypeInfo An object containing type information
+ * @property {string[]} all An array of all types matched
+ * @property {(other: any)=> boolean} equalsType Check if another object has exactly the same types
+ * @property {(...types: string[])=> boolean} is Return true if object is of all provided types
+ * @property {(...types: string[])=> boolean} isNot Return true if object is not of any of the provided types
+ * @property {(what: { is?: string | string[], isNot?: string | string[] })=> boolean} match Return true if object matches all `is` types and none of the `isNot` types
+ * @property {()=> string} toString String representation of all types matched
  */
+
+
 /**
- * Checks the provided argument against all global type enums and primitives, evaluating to true if it matches all of the type strings provided as input argument
+ * Type constants
+ * @enum {string}
+ */
+const T = {
+  array: 'array',
+  bigint: 'bigint',
+  boolean: 'boolean',
+  date: 'date',
+  error: 'error',
+  function: 'function',
+  null: 'null',
+  number: 'number',
+  object: 'object',
+  regexp: 'regexp',
+  symbol: 'symbol',
+  string: 'string',
+  undefined: 'undefined',
+};
+
+/**
+ * Get type information of the provided argument
  * @param {any} obj The object to check.
- * @param {...string} check The types to compare against.
  * @returns {TypeInfo} Result of the check.
  */
-function type(obj, ...check) {
-  let tt = [];
+function type(obj) {
+  let all = [];
 
-  if (obj === null) tt.push('null');
-  if (obj === false || obj === true) tt.push('boolean');
-  tt.push(typeof obj);
+  if (obj === null) all.push(T.null);
+  if (obj === false || obj === true) all.push(T.boolean);
+
+  all.push(typeof obj);
 
   if (Array.isArray(obj)) {
-    tt.push('array');
+    all.push(T.array);
   }
   if (Object.prototype.toString.call(obj) === '[object Object]') {
-    tt.push('object');
+    all.push(T.object);
   }
   if (Object.prototype.toString.call(obj) === '[object Date]') {
-    tt.push('date');
+    all.push(T.date);
   }
   if (Object.prototype.toString.call(obj) === '[object Function]') {
-    tt.push('function');
+    all.push(T.function);
   }
   if (Object.prototype.toString.call(obj) === '[object RegExp]') {
-    tt.push('regexp');
+    all.push(T.regexp);
   }
   if (Object.prototype.toString.call(obj) === '[object Error]') {
-    tt.push('error');
+    all.push(T.error);
   }
 
-  let r = {
-    valueOf: () => {
-      for (const t of tt) {
-        if (check.includes(t)) {
-          return true;
-        }
-      }
-      return false;
+  all = [...new Set(all)].sort();
+
+  return {
+    get all() {
+      return all;
     },
-    get allTypes() {
-      return uniqueSortedArray(tt);
+
+    equalsType(other) {
+      return all.toString() === type(other).all.toString();
     },
-    set allTypes(_) {},
-    get checkTypes() {
-      return uniqueSortedArray(check);
+
+    is(...types) {
+      types = liftArray(types);
+
+      return types.every(t => all.includes(t));
     },
-    set checkTypes(_) {},
+
+    isNot(...types) {
+      types = liftArray(types);
+
+      return !types.some(t => all.includes(t));
+    },
+
+    match({ is, isNot }) {
+      is = is || [];
+      isNot = isNot || [];
+
+      if (typeof is === T.string) is = [is];
+      if (typeof isNot === T.string) isNot = [isNot];
+
+      const matchAllIs = is.every(t => all.includes(t));
+      const matchAnyIsNot = isNot.some(t => all.includes(t));
+
+      return matchAllIs && !matchAnyIsNot;
+    },
+
+    toString() {
+      return this.all.join(', ');
+    }
   };
-
-  return r;
 }
 
-function uniqueSortedArray(arr) {
-  return [...new Set(arr)].sort();
+/**
+ * Lift up array from variadic arguments if it is the only argument
+ * @param {any[]} varArg
+ * @returns {any[]} The lifted or original array
+ */
+function liftArray(varArg) {
+  if (varArg.length === 1 && Array.isArray(varArg[0])) return varArg[0];
+  else return varArg;
 }
 
-module.exports = type;
+module.exports = { type ,T };
