@@ -1,50 +1,46 @@
 const type = require('../../src/type');
 
 const typeTestCases = [
-  { value: null, typeName: 'null', expectedTypes: ['null', 'object'] },
-  { value: [], typeName: 'array', expectedTypes: ['array', 'object'] },
-  { value: [1, 2, 3], typeName: 'array', expectedTypes: ['array', 'object'] },
-  { value: {}, typeName: 'object', expectedTypes: ['object'] },
-  { value: { a: 1, b: 2 }, typeName: 'object', expectedTypes: ['object'] },
-  { value: new Date(), typeName: 'date', expectedTypes: ['date', 'object'] },
-  { value: function () {}, typeName: 'function', expectedTypes: ['function'] },
-  { value: function namedFunction() {}, type: 'function', expectedTypes: ['function'] },
-  { value: () => {}, typeName: 'function', expectedTypes: ['function'] },
-  { value: /regex/, typeName: 'regexp', expectedTypes: ['regexp', 'object'] },
-  { value: /regex/gi, typeName: 'regexp', expectedTypes: ['regexp', 'object'] },
-  { value: new Error(), typeName: 'error', expectedTypes: ['error', 'object'] },
-  { value: new TypeError(), typeName: 'error', expectedTypes: ['error', 'object'] },
-  { value: 'string', typeName: 'string', expectedTypes: ['string'] },
-  { value: '', typeName: 'string', expectedTypes: ['string'] },
-  { value: ' ', typeName: 'string', expectedTypes: ['string'] },
-  { value: 'special characters: !@#$%^&*()', type: 'string', expectedTypes: ['string'] },
-  { value: 123, typeName: 'number', expectedTypes: ['number'] },
-  { value: 0, typeName: 'number', expectedTypes: ['number'] },
-  { value: -123, typeName: 'number', expectedTypes: ['number'] },
-  { value: 123.456, typeName: 'number', expectedTypes: ['number'] },
-  { value: -123.456, typeName: 'number', expectedTypes: ['number'] },
-  { value: NaN, typeName: 'number', expectedTypes: ['number'] },
-  { value: Infinity, typeName: 'number', expectedTypes: ['number'] },
-  { value: true, typeName: 'boolean', expectedTypes: ['boolean'] },
-  { value: false, typeName: 'boolean', expectedTypes: ['boolean'] },
-  { value: undefined, typeName: 'undefined', expectedTypes: ['undefined'] },
+  { value: null, typeName: 'null', allExpected: ['null', 'object'] },
+  { value: [], typeName: 'array', allExpected: ['array', 'object'] },
+  { value: [1, 2, 3], typeName: 'array', allExpected: ['array', 'object'] },
+  { value: {}, typeName: 'object', allExpected: ['object'] },
+  { value: { a: 1, b: 2 }, typeName: 'object', allExpected: ['object'] },
+  { value: new Date(), typeName: 'date', allExpected: ['date', 'object'] },
+  { value: function () {}, typeName: 'function', allExpected: ['function'] },
+  { value: function namedFunction() {}, type: 'function', allExpected: ['function'] },
+  { value: () => {}, typeName: 'function', allExpected: ['function'] },
+  { value: /regex/, typeName: 'regexp', allExpected: ['regexp', 'object'] },
+  { value: /regex/gi, typeName: 'regexp', allExpected: ['regexp', 'object'] },
+  { value: new Error(), typeName: 'error', allExpected: ['error', 'object'] },
+  { value: new TypeError(), typeName: 'error', allExpected: ['error', 'object'] },
+  { value: 'string', typeName: 'string', allExpected: ['string'] },
+  { value: '', typeName: 'string', allExpected: ['string'] },
+  { value: ' ', typeName: 'string', allExpected: ['string'] },
+  { value: 'special characters: !@#$%^&*()', type: 'string', allExpected: ['string'] },
+  { value: 123, typeName: 'number', allExpected: ['number'] },
+  { value: 0, typeName: 'number', allExpected: ['number'] },
+  { value: -123, typeName: 'number', allExpected: ['number'] },
+  { value: 123.456, typeName: 'number', allExpected: ['number'] },
+  { value: -123.456, typeName: 'number', allExpected: ['number'] },
+  { value: NaN, typeName: 'number', allExpected: ['number'] },
+  { value: Infinity, typeName: 'number', allExpected: ['number'] },
+  { value: true, typeName: 'boolean', allExpected: ['boolean'] },
+  { value: false, typeName: 'boolean', allExpected: ['boolean'] },
+  { value: undefined, typeName: 'undefined', allExpected: ['undefined'] },
 ];
 
+
 typeTestCases.forEach((tc) => {
-  const result = type(tc.value, ...tc.expectedTypes.sort());
-  test(`typeName:"${jp(tc.typeName)}"|valueOf:"${jp(result.valueOf())}"|allTypes":"${jp(result.allTypes)}"|checkTypes:"${jp(
-    result.checkTypes
-  )}|expectedTypes:${jp(tc.expectedTypes)}"`, () => {
-    if (result.valueOf() !== true) throw new Error(`valueOf should be true`);
-    if (!arrStrEqual(result.checkTypes, tc.expectedTypes)) throw new Error(`checkTypes should equal expectedTypes`);
-    if (!arrStrEqual(result.allTypes, tc.expectedTypes)) throw new Error(`allTypes should equal expectedTypes`);
+  const t = type(tc.value);
+  test(`typeName: ${tc.typeName}, value: ${tc.value}, expected: ${tc.expectedTypes}`, () => {
+    if (!t.is(tc.allExpected )) throw new Error(`match should be true`);
+    if (!arrayEquals(t.all, tc.expectedTypes)) throw new Error(`all(${t.all}) should equal expectedTypes(${tc.expectedTypes})`);
   });
 });
 
-function arrStrEqual(arr, arr2) {
-  return arr.toString() === arr2.toString();
+
+function arrayEquals(arr, arr2) {
+  return arr.sort().toString() === arr2.sort().toString();
 }
 
-function jp(obj) {
-  return JSON.stringify(obj, null, 2);
-}

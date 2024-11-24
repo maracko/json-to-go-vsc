@@ -2,6 +2,15 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.3.0]
+
+- added recommended linter rules
+
+fix:
+- bug in type library and refactor it to a more sensible implementation which should fix [#6](https://github.com/maracko/json-to-go-vsc/issues/6)
+- minor bug that could affect text replace range when pasting
+
+
 ## [1.2.1]
 
 - modified saved conversions format a bit to make it cleaner
