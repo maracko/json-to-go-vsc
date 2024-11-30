@@ -22,25 +22,61 @@
  * @property {()=> string} toString String representation of all types matched
  */
 
-
 /**
  * Type constants
  * @enum {string}
  */
 const T = {
+  asyncFunction: 'asyncFunction',
+  asyncGeneratorFunction: 'asyncGeneratorFunction',
   array: 'array',
   bigint: 'bigint',
   boolean: 'boolean',
   date: 'date',
   error: 'error',
   function: 'function',
+  generatorFunction: 'generatorFunction',
+  map: 'map',
   null: 'null',
   number: 'number',
   object: 'object',
+  promise: 'promise',
   regexp: 'regexp',
+  set: 'set',
   symbol: 'symbol',
   string: 'string',
   undefined: 'undefined',
+  weakmap: 'weakmap',
+  weakref: 'weakref',
+  weakset: 'weakset',
+};
+
+/**
+ * toString(): [constructor, type]
+ */
+const _m = {
+  '[object Array]': [Array, T.array],
+  '[object AsyncFunction]': [undefined, T.asyncFunction],
+  '[object AsyncGeneratorFunction]': [undefined, T.asyncGeneratorFunction],
+  '[object BigInt]': [BigInt, T.bigint],
+  '[object Boolean]': [Boolean, T.boolean],
+  '[object Date]': [Date, T.date],
+  '[object Error]': [Error, T.error],
+  '[object Function]': [Function, T.function],
+  '[object GeneratorFunction]': [undefined, T.generatorFunction],
+  '[object Map]': [Map, T.map],
+  '[object Null]': [undefined, T.null],
+  '[object Number]': [Number, T.number],
+  '[object Object]': [Object, T.object],
+  '[object Promise]': [Promise, T.promise],
+  '[object RegExp]': [RegExp, T.regexp],
+  '[object Set]': [Set, T.set],
+  '[object String]': [String, T.string],
+  '[object Symbol]': [Symbol, T.symbol],
+  '[object Undefined]': [undefined, T.undefined],
+  '[object WeakMap]': [WeakMap, T.weakmap],
+  '[object WeakRef]': [WeakRef, T.weakref],
+  '[object WeakSet]': [WeakSet, T.weakset],
 };
 
 /**
@@ -49,30 +85,20 @@ const T = {
  * @returns {TypeInfo} Result of the check.
  */
 function type(obj) {
-  let all = [];
+  let all = [typeof obj];
 
-  if (obj === null) all.push(T.null);
-  if (obj === false || obj === true) all.push(T.boolean);
-
-  all.push(typeof obj);
+  const objToStr = Object.prototype.toString.call(obj);
+  for (const [typToStr, [constructor, typStr]] of Object.entries(_m)) {
+    if (
+      typToStr === objToStr ||
+      (constructor !== undefined && obj instanceof constructor)
+    ) {
+      all.push(typStr);
+    }
+  }
 
   if (Array.isArray(obj)) {
     all.push(T.array);
-  }
-  if (Object.prototype.toString.call(obj) === '[object Object]') {
-    all.push(T.object);
-  }
-  if (Object.prototype.toString.call(obj) === '[object Date]') {
-    all.push(T.date);
-  }
-  if (Object.prototype.toString.call(obj) === '[object Function]') {
-    all.push(T.function);
-  }
-  if (Object.prototype.toString.call(obj) === '[object RegExp]') {
-    all.push(T.regexp);
-  }
-  if (Object.prototype.toString.call(obj) === '[object Error]') {
-    all.push(T.error);
   }
 
   all = [...new Set(all)].sort();
@@ -89,31 +115,31 @@ function type(obj) {
     is(...types) {
       types = liftArray(types);
 
-      return types.every(t => all.includes(t));
+      return types.every((t) => all.includes(t));
     },
 
     isNot(...types) {
       types = liftArray(types);
 
-      return !types.some(t => all.includes(t));
+      return !types.some((t) => all.includes(t));
     },
 
-    match({ is, isNot }) {
+    match({ is, isNot } = {}) {
       is = is || [];
       isNot = isNot || [];
 
       if (typeof is === T.string) is = [is];
       if (typeof isNot === T.string) isNot = [isNot];
 
-      const matchAllIs = is.every(t => all.includes(t));
-      const matchAnyIsNot = isNot.some(t => all.includes(t));
+      const matchAllIs = is.every((t) => all.includes(t));
+      const matchAnyIsNot = isNot.some((t) => all.includes(t));
 
       return matchAllIs && !matchAnyIsNot;
     },
 
     toString() {
       return this.all.join(', ');
-    }
+    },
   };
 }
 
@@ -127,4 +153,4 @@ function liftArray(varArg) {
   else return varArg;
 }
 
-module.exports = { type ,T };
+module.exports = { type, T };
