@@ -75,6 +75,7 @@ const _m = {
   '[object Symbol]': [Symbol, T.symbol],
   '[object Undefined]': [undefined, T.undefined],
   '[object WeakMap]': [WeakMap, T.weakmap],
+  // eslint-disable-next-line no-undef
   '[object WeakRef]': [WeakRef, T.weakref],
   '[object WeakSet]': [WeakSet, T.weakset],
 };
@@ -109,7 +110,7 @@ function type(obj) {
     },
 
     equalsType(other) {
-      return all.toString() === type(other).all.toString();
+      return this.toString() === type(other).toString();
     },
 
     is(...types) {

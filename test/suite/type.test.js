@@ -48,7 +48,6 @@ describe('type function', () => {
         return '[object Custom]';
       },
     };
-    console.log(obj.toString());
     expect(type(obj).all).toEqual([T.object]);
   });
 
@@ -97,7 +96,7 @@ describe('type function', () => {
     expect(type(123).toString()).toBe(T.number);
   });
 
-  test('should identify async and generator function types', () => {
+  test('should identify async and generator functions correctly', () => {
     expect(type(async function () {}).all).toEqual([
       T.asyncFunction,
       T.function,
