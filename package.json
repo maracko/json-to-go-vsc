@@ -8,7 +8,7 @@
     "repository": "https://github.com/maracko/json-to-go-vsc",
     "displayName": "JSON to Go",
     "description": "Convert JSON data to Go type definition",
-    "version": "1.3.0",
+    "version": "1.3.1",
     "engines": {
         "vscode": "^1.80.0",
         "node": ">=17.0.0"
