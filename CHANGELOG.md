@@ -2,6 +2,10 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.3.1]
+
+- updated the ci/cd workflow with a new job to run linter, tests and verify changelog is updated. If these conditions are satisfied, the `build_and_release` job will now also publish new version on visual studio marketplace
+
 ## [1.3.0]
 
 - added recommended linter rules

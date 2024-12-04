@@ -13,8 +13,9 @@
  */
 
 /**********/
+// eslint-disable-next-line node/no-missing-require
 const vscode = require('vscode');
-const { type ,T} = require('./type');
+const { type, T } = require('./type');
 /**********/
 
 const enums = {
@@ -34,13 +35,13 @@ const enums = {
     AreYouSure: 'Are you sure?',
     Cancel: 'Cancel',
     Confirm: 'Confirm',
-    DontShowAgain: "Don't show again",
+    DontShowAgain: 'Don\'t show again',
     ShowDetails: 'Show details',
     GoToSettings: 'Go to settings',
     Remember: {
       Yes: 'Yes',
       No: 'No',
-      DontAsk: "No and don't ask again",
+      DontAsk: 'No and don\'t ask again',
     },
   },
   T: T,
@@ -91,7 +92,7 @@ const keys = {
       promptForTypeName: 'pasteIntegration.promptForTypeName',
       supportedLanguages: 'pasteIntegration.supportedLanguages',
     },
-  }
+  },
 };
 
 /**
@@ -155,7 +156,9 @@ function newGlobals(input = {}) {
   return new Proxy(daRealG, {
     set: function (target, key, value) {
       if (key in target) {
-        console.error(`json-to-go: GlobalDisposable: cannot reassign '${String(key)}', it is already set to: '${JSON.stringify(target[key])}'`);
+        console.error(
+          `json-to-go: GlobalDisposable: cannot reassign '${String(key)}', it is already set to: '${JSON.stringify(target[key])}'`,
+        );
         return false;
       }
       target[key] = value;
@@ -215,7 +218,6 @@ function ListenerControllerInitializer() {
 
   return this;
 }
-
 
 /**
  * Recursively creates a copy of an object or array.

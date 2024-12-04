@@ -7,14 +7,16 @@
 		"mocha": true
 	},
 	"parserOptions": {
-		"ecmaVersion": 2018,
+		"ecmaVersion": 2021,
 		"ecmaFeatures": {
 			"jsx": false
 		},
 		"sourceType": "module"
 	},
 	"extends": [
-		"eslint:recommended"
+		"eslint:recommended",
+		"plugin:node/recommended",
+		"plugin:jest/recommended"
 	],
 	"rules": {
 		"no-const-assign": "warn",
@@ -31,6 +33,10 @@
 		"semi": [
 			"error",
 			"always"
+		],
+		"quotes": [
+			"warn",
+			"single"
 		]
 	},
 	"plugins": [

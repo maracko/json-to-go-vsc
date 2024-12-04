@@ -34,6 +34,12 @@ function capStr(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
+/** @returns {string[]} Capitalized array */
+function capArray(arr) {
+  [].map();
+  return arr.map((str) => capStr(str));
+}
+
 /**
  * Capitalizes the values of an object.
  * @param {Object.<string,string>} obj The object whose values will be capitalized.
@@ -55,7 +61,7 @@ function convertText(text, typeName) {
     typeName || g.cfg.get(keys.settings.generatedTypeName),
     !g.cfg.get(keys.settings.inlineTypeDefinitions),
     false,
-    g.cfg.get(keys.settings.allOmitEmpty)
+    g.cfg.get(keys.settings.allOmitEmpty),
   );
 }
 
@@ -68,7 +74,11 @@ function convertText(text, typeName) {
  * @param {string} [options.workspaceName] Conversion workspace name. By default reads the name of the first folder in the workspace.
  * @returns {Promise<string>} A promise containing the filled out template.
  */
-async function saveConversion(json, go, { addPackage = false, workspaceName } = {}) {
+async function saveConversion(
+  json,
+  go,
+  { addPackage = false, workspaceName } = {},
+) {
   addPackage && (go = `package model\n\n\n${go}`);
   let parts = [os.homedir(), `.${keys.jsonToGo}-history`];
 
@@ -76,7 +86,8 @@ async function saveConversion(json, go, { addPackage = false, workspaceName } = 
   switch (true) {
   case workspaceName.length > 0:
     break;
-  case vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0:
+  case vscode.workspace.workspaceFolders &&
+      vscode.workspace.workspaceFolders.length > 0:
     workspaceName = vscode.workspace.workspaceFolders[0].name;
     break;
   default:
@@ -87,7 +98,7 @@ async function saveConversion(json, go, { addPackage = false, workspaceName } = 
   parts.push(workspaceName, `${Date.now()}-${keys.jsonToGo}-conversion.md`);
   let fUri = vscode.Uri.file(path.join(...parts));
 
-  let md = `# JSON-to-Go conversion\n\n`;
+  let md = '# JSON-to-Go conversion\n\n';
   md += `## Date: ${new Date().toUTCString()}\n\n`;
   md += `## Workspace: ${workspaceName}\n\n`;
   md += '```go\n' + go + '\n```\n\n';
@@ -114,13 +125,14 @@ function weirdThrow(weird) {
 function isComplexJSON(str) {
   return (
     typeof str === 'string' &&
-        ((str.charAt(0) === '{' && str.charAt(str.length - 1) === '}') || (str.charAt(0) === '[' && str.charAt(str.length - 1) === ']'))
+    ((str.charAt(0) === '{' && str.charAt(str.length - 1) === '}') ||
+      (str.charAt(0) === '[' && str.charAt(str.length - 1) === ']'))
   );
 }
 
-
 module.exports = {
   capStr,
+  capArray,
   capValues,
   convertText,
   lKey,
