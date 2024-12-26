@@ -61,12 +61,7 @@ describe('type function', () => {
     expect(type(Infinity).all).toEqual([T.number]);
   });
 
-  test('should handle functions correctly', () => {
-    expect(type(function () {}).all).toEqual([T.function, T.object]);
-    expect(type(() => {}).all).toEqual([T.function, T.object]);
-  });
-
-  test('should identify custom types', () => {
+  test('should handle custom types', () => {
     class CustomType {}
     expect(type(new CustomType()).all).toEqual([T.object]);
   });
@@ -112,6 +107,5 @@ describe('type function', () => {
       T.generatorFunction,
       T.object,
     ]);
-    expect(type(BigInt(123)).all).toEqual([T.bigint]);
   });
 });

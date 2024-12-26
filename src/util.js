@@ -36,7 +36,6 @@ function capStr(str) {
 
 /** @returns {string[]} Capitalized array */
 function capArray(arr) {
-  [].map();
   return arr.map((str) => capStr(str));
 }
 
@@ -105,6 +104,7 @@ async function saveConversion(
   md += '```json\n' + json + '\n```\n';
 
   await vscode.workspace.fs.writeFile(fUri, Buffer.from(md, 'utf8'));
+
   return Promise.resolve(md);
 }
 /**

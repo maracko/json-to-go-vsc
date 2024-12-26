@@ -125,6 +125,7 @@ async function convert(fresh = false) {
       );
       if (!input) {
         vscode.window.showInformationMessage('Nothing chosen, aborting');
+
         return;
       }
       input = input.toLowerCase();
@@ -165,6 +166,7 @@ async function convert(fresh = false) {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
         vscode.window.showErrorMessage('No editor active for input');
+
         return;
       }
       txt = editor.document.getText(editor.selection);
@@ -176,6 +178,7 @@ async function convert(fresh = false) {
     case enums.input.currentFile:
       if (!vscode.window.activeTextEditor) {
         vscode.window.showErrorMessage('No editor active for input');
+
         return;
       }
       txt = vscode.window.activeTextEditor.document.getText();
@@ -186,6 +189,7 @@ async function convert(fresh = false) {
 
     if (!txt) {
       vscode.window.showErrorMessage(`Nothing found inside ${capStr(input)}`);
+
       return;
     }
 
@@ -198,6 +202,7 @@ async function convert(fresh = false) {
             vscode.window.showInformationMessage(struct.error);
           }
         });
+
       return;
     }
 
@@ -215,6 +220,7 @@ async function convert(fresh = false) {
       );
       if (!output) {
         vscode.window.showInformationMessage('Nothing chosen, aborting');
+
         return;
       }
       output = output.toLowerCase();
@@ -278,6 +284,7 @@ async function convert(fresh = false) {
       const editor = vscode.window.activeTextEditor;
       if (!editor) {
         vscode.window.showErrorMessage('No editor active for output');
+
         return;
       }
       editor.edit((editBuilder) => {
@@ -361,11 +368,13 @@ async function resetAllSettings(force = false) {
     }
 
     await initCtx(true);
+
     return await li.updatePasteContext();
   };
 
   if (force) {
     await reset();
+
     return Promise.resolve();
   }
 
@@ -403,14 +412,15 @@ function openSettingsWindow() {
  */
 async function handleErr(error) {
   if (
-    !type(error).is(enums.T.object) ||
-    !type(error.message).is(enums.T.string)
+    type(error).isNot(enums.T.object) ||
+    type(error.message).isNot(enums.T.string)
   ) {
     console.error(
       `Error: An unknown error occurred in JSON to Go: ${JSON.stringify(
         error,
       )}`,
     );
+
     return;
   }
   const errStr = `Error:\nName: "${error.name}"\nMessage: "${error.message}"\nStack: "${error.stack}"`;

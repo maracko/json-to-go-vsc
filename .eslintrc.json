@@ -37,6 +37,14 @@
 		"quotes": [
 			"warn",
 			"single"
+		],
+		"padding-line-between-statements": [
+			"error",
+			{
+				"blankLine": "always",
+				"prev": "*",
+				"next": "return"
+			}
 		]
 	},
 	"plugins": [

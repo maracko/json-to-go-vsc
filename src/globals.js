@@ -149,6 +149,7 @@ function newGlobals(input = {}) {
       this.disposables.length = 0;
       Object.keys(this.li).forEach((k) => this.li[k].dispose());
       nDisp++;
+
       return nDisp;
     },
   };
@@ -159,15 +160,18 @@ function newGlobals(input = {}) {
         console.error(
           `json-to-go: GlobalDisposable: cannot reassign '${String(key)}', it is already set to: '${JSON.stringify(target[key])}'`,
         );
+
         return false;
       }
       target[key] = value;
+
       return true;
     },
     get: function name(target, prop) {
       if (prop === 'cfg') {
         return vscode.workspace.getConfiguration(keys.jsonToGo);
       }
+
       return target[prop];
     },
   });
@@ -198,8 +202,11 @@ function ListenerControllerInitializer() {
     if (disp && isFunc(disp.dispose)) {
       disp.dispose();
     }
+
     disp = evSrc(list, this, g.ctx.subscriptions);
-    console.log(`ListenerController: ${this.name()} enabled`);
+
+    simpleLog(`ListenerController: ${this.name()} enabled`);
+
     return true;
   };
   this.listener = () => list;
@@ -211,8 +218,10 @@ function ListenerControllerInitializer() {
       disp.dispose();
       disp = undefined;
       op = true;
-      console.log(`ListenerController: ${this.name()} disposed`);
+
+      simpleLog(`ListenerController: ${this.name()} disposed`);
     }
+
     return op;
   };
 
@@ -244,6 +253,11 @@ function isObj(x) {
 
 function isFunc(x) {
   return type(x).is(enums.T.function);
+}
+
+function simpleLog(msg) {
+  const timeStr = new Date().toISOString().replace('T', ' ').replace('Z', '');
+  console.log(`[${timeStr}] [${keys.jsonToGo}]: ${msg}`);
 }
 
 module.exports = {

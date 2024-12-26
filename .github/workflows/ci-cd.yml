@@ -69,7 +69,7 @@ jobs:
         run: yarn build
 
       - name: Publish extension to VS Code Marketplace
-        run: yarn vsce publish
+        run: yarn publish-marketplace
         env:
           VSCE_PAT: ${{ secrets.VSC_MARKETPLACE_PAT }}
 

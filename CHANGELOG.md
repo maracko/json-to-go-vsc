@@ -2,6 +2,31 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.3.2]
+
+chore:
+
+- update package.json scripts
+
+deps:
+
+- update json-to-go to latest
+- update linter and jest dependencies
+
+fix:
+
+- unhandled error when running conversion command(s) manually
+
+style:
+
+- add eslint rule requiring a blank line before return statement
+- add current time and extension to log messages for easier debugging
+
+test:
+
+- remove redundant tests
+
+
 ## [1.3.1]
 
 - updated the ci/cd workflow with a new job to run linter, tests and verify changelog is updated. If these conditions are satisfied, the `build_and_release` job will now also publish new version on visual studio marketplace
@@ -11,6 +36,7 @@ All notable changes to the "json-to-go" extension will be documented in this fil
 - added recommended linter rules
 
 fix:
+
 - bug in type library and refactor it to a more sensible implementation which should fix [#6](https://github.com/maracko/json-to-go-vsc/issues/6)
 - minor bug that could affect text replace range when pasting
 
