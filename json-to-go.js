@@ -19,6 +19,8 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 	let accumulator = "";
 	let innerTabs = 0;
 	let parent = "";
+	let globallySeenTypeNames = [];
+	let previousParents = "";
 
 	try
 	{
@@ -38,10 +40,15 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 
 	parseScope(scope);
 
+	if (flatten)
+		go += accumulator
+
+	// add final newline for POSIX 3.206
+	if (!go.endsWith(`\n`))
+		go += `\n`
+
 	return {
-		go: flatten
-			? go += accumulator
-			: go
+		go: go
 	};
 
 
@@ -95,7 +102,21 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 								const existingValue = allFields[keyname].value;
 								const currentValue = scope[i][keyname];
 
-								if (compareObjects(existingValue, currentValue)) {
+								if (!areSameType(existingValue, currentValue)) {
+									if(existingValue !== null) {
+										allFields[keyname].value = null // force type "any" if types are not identical
+										console.warn(`Warning: key "${keyname}" uses multiple types. Defaulting to type "any".`)
+									}
+									allFields[keyname].count++
+									continue
+								}
+
+								// if variable was first detected as int (7) and a second time as float64 (3.14)
+								// then we want to select float64, not int. Similar for int64 and float64.
+								if(areSameType(currentValue, 1))
+									allFields[keyname].value = findBestValueForNumberType(existingValue, currentValue);
+
+								if (areObjects(existingValue, currentValue)) {
 									const comparisonResult = compareObjectKeys(
 										Object.keys(currentValue),
 										Object.keys(existingValue)
@@ -123,7 +144,7 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 						struct[keyname] = elem.value;
 						omitempty[keyname] = elem.count != scopeLength;
 					}
-					parseStruct(depth + 1, innerTabs, struct, omitempty); // finally parse the struct !!
+					parseStruct(depth + 1, innerTabs, struct, omitempty, previousParents); // finally parse the struct !!
 				}
 				else if (sliceType == "slice") {
 					parseScope(scope[0], depth)
@@ -146,7 +167,7 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 						append(parent)
 					}
 				}
-				parseStruct(depth + 1, innerTabs, scope);
+				parseStruct(depth + 1, innerTabs, scope, false, previousParents);
 			}
 		}
 		else {
@@ -159,7 +180,7 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 		}
 	}
 
-	function parseStruct(depth, innerTabs, scope, omitempty)
+	function parseStruct(depth, innerTabs, scope, omitempty, oldParents)
 	{
 		if (flatten) {
 			stack.push(
@@ -188,12 +209,20 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 			appender(`${parentType} struct {\n`);
 			++innerTabs;
 			const keys = Object.keys(scope);
+			previousParents = parent
 			for (let i in keys)
 			{
 				const keyname = getOriginalName(keys[i]);
 				indenter(innerTabs)
-				const typename = uniqueTypeName(format(keyname), seenTypeNames)
-				seenTypeNames.push(typename)
+				let typename
+				// structs will be defined on the top level of the go file, so they need to be globally unique
+				if (typeof scope[keys[i]] === "object" && scope[keys[i]] !== null) {
+					typename = uniqueTypeName(format(keyname), globallySeenTypeNames, previousParents)
+					globallySeenTypeNames.push(typename)
+				} else {
+					typename = uniqueTypeName(format(keyname), seenTypeNames)
+					seenTypeNames.push(typename)
+				}
 
 				appender(typename+" ");
 				parent = typename
@@ -207,18 +236,28 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 			}
 			indenter(--innerTabs);
 			appender("}");
+			previousParents = oldParents;
 		}
 		else
 		{
 			append("struct {\n");
 			++tabs;
 			const keys = Object.keys(scope);
+			previousParents = parent
 			for (let i in keys)
 			{
 				const keyname = getOriginalName(keys[i]);
 				indent(tabs);
-				const typename = uniqueTypeName(format(keyname), seenTypeNames)
-				seenTypeNames.push(typename)
+				let typename
+				// structs will be defined on the top level of the go file, so they need to be globally unique
+				if (typeof scope[keys[i]] === "object" && scope[keys[i]] !== null) {
+					typename = uniqueTypeName(format(keyname), globallySeenTypeNames, previousParents)
+					globallySeenTypeNames.push(typename)
+				} else {
+					typename = uniqueTypeName(format(keyname), seenTypeNames)
+					seenTypeNames.push(typename)
+				}
+
 				append(typename+" ");
 				parent = typename
 				parseScope(scope[keys[i]], depth);
@@ -235,6 +274,7 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 			}
 			indent(--tabs);
 			append("}");
+			previousParents = oldParents;
 		}
 		if (flatten)
 			accumulator += stack.pop();
@@ -264,9 +304,17 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 
 	// Generate a unique name to avoid duplicate struct field names.
 	// This function appends a number at the end of the field name.
-	function uniqueTypeName(name, seen) {
+	function uniqueTypeName(name, seen, prefix=null) {
 		if (seen.indexOf(name) === -1) {
 			return name;
+		}
+
+		// check if we can get a unique name by prefixing it
+		if(prefix) {
+			name = prefix+name
+			if (seen.indexOf(name) === -1) {
+				return name;
+			}
 		}
 
 		let i = 0;
@@ -346,6 +394,50 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 		}
 	}
 
+	// change the value to expand ints and floats to their larger equivalent
+	function findBestValueForNumberType(existingValue, newValue) {
+		if (!areSameType(newValue, 1)) {
+			console.error(`Error: currentValue ${newValue} is not a number`)
+			return null // falls back to goType "any"
+		}
+
+		const newGoType = goType(newValue)
+		const existingGoType = goType(existingValue)
+
+		if (newGoType === existingGoType)
+			return existingValue
+
+		// always upgrade float64
+		if (newGoType === "float64")
+			return newValue
+		if (existingGoType === "float64")
+			return existingValue
+
+		// it's too complex to distinguish int types and float32, so we force-upgrade to float64
+		// if anyone has a better suggestion, PRs are welcome!
+		if (newGoType.includes("float") && existingGoType.includes("int"))
+			return Number.MAX_VALUE
+		if (newGoType.includes("int") && existingGoType.includes("float"))
+			return Number.MAX_VALUE
+
+		if (newGoType.includes("int") && existingGoType.includes("int")) {
+			const existingValueAbs = Math.abs(existingValue);
+			const newValueAbs = Math.abs(newValue);
+
+			// if the sum is overflowing, it's safe to assume numbers are very large. So we force int64.
+			if (!isFinite(existingValueAbs + newValueAbs))
+				return Number.MAX_SAFE_INTEGER
+
+			// it's too complex to distinguish int8, int16, int32 and int64, so we just use the sum as best-guess
+			return existingValueAbs + newValueAbs;
+		}
+
+		// There should be other cases
+		console.error(`Error: something went wrong with findBestValueForNumberType() using the values: '${newValue}' and '${existingValue}'`)
+		console.error("       Please report the problem to https://github.com/mholt/json-to-go/issues")
+		return null // falls back to goType "any"
+	}
+
 	// Given two types, returns the more specific of the two
 	function mostSpecificPossibleGoType(typ1, typ2)
 	{
@@ -410,10 +502,17 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 		return unique
 	}
 
-	function compareObjects(objectA, objectB) {
+	function areObjects(objectA, objectB) {
 		const object = "[object Object]";
 		return Object.prototype.toString.call(objectA) === object
 			&& Object.prototype.toString.call(objectB) === object;
+	}
+
+	function areSameType(objectA, objectB) {
+		// prototype.toString required to compare Arrays and Objects
+		const typeA =  Object.prototype.toString.call(objectA)
+		const typeB = Object.prototype.toString.call(objectB)
+		return typeA === typeB
 	}
 
 	function compareObjectKeys(itemAKeys, itemBKeys) {
@@ -444,23 +543,55 @@ function jsonToGo(json, typename, flatten = true, example = false, allOmitempty 
 }
 
 if (typeof module != 'undefined') {
-    if (!module.parent) {
-        if (process.argv.length > 2 && process.argv[2] === '-big') {
-            bufs = []
-            process.stdin.on('data', function(buf) {
-                bufs.push(buf)
-            })
-            process.stdin.on('end', function() {
-                const json = Buffer.concat(bufs).toString('utf8')
-                console.log(jsonToGo(json).go)
-            })
-        } else {
-            process.stdin.on('data', function(buf) {
-                const json = buf.toString('utf8')
-                console.log(jsonToGo(json).go)
-            })
-        }
-    } else {
-        module.exports = jsonToGo
-    }
+	if (!module.parent) {
+		let filename = null
+
+		function jsonToGoWithErrorHandling(json) {
+			const output = jsonToGo(json)
+			if (output.error) {
+				console.error(output.error)
+				process.exitCode = 1
+			}
+			process.stdout.write(output.go)
+		}
+
+		process.argv.forEach((val, index) => {
+			if (index < 2)
+				return
+
+			if (!val.startsWith('-')) {
+				filename = val
+				return
+			}
+
+			const argument = val.replace(/-/g, '')
+			if (argument === "big")
+				console.warn(`Warning: The argument '${argument}' has been deprecated and has no effect anymore`)
+			else {
+				console.error(`Unexpected argument ${val} received`)
+				process.exit(1)
+			}
+		})
+
+		if (filename) {
+			const fs = require('fs');
+			const json = fs.readFileSync(filename, 'utf8');
+			jsonToGoWithErrorHandling(json)
+			return
+		}
+
+		if (!filename) {
+			bufs = []
+			process.stdin.on('data', function(buf) {
+				bufs.push(buf)
+			})
+			process.stdin.on('end', function() {
+				const json = Buffer.concat(bufs).toString('utf8')
+				jsonToGoWithErrorHandling(json)
+			})
+			return
+		}
+	} else {
+		module.exports = jsonToGo
+	}
 }
