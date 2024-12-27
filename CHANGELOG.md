@@ -2,6 +2,27 @@
 
 All notable changes to the "json-to-go" extension will be documented in this file.
 
+## [1.4.0]
+
+feat:
+
+- new toggle in settings to add examples to the generated struct
+- add husky pre-commit and pre-push hooks to run linter and tests, verify changelog is updated and pushed tags are in semantic versioning format
+
+refactor:
+
+- logging
+- GlobalDisposable and ListenerController interfaces
+
+test:
+
+- move tests out of empty `suite` dir
+
+style:
+
+- fix eslint rules and warnings
+- added padding to make code more readable and other minor changes
+
 ## [1.3.2]
 
 chore:
