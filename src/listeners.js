@@ -31,17 +31,26 @@ async function onDidChangeTextDocumentListener(ev) {
   let clipTxt = await vscode.env.clipboard.readText();
   if (!clipTxt || clipTxt.length < 2) return Promise.resolve();
 
+  let [replacePattern, lineSep] =
+    ev.document.eol === vscode.EndOfLine.CRLF
+      ? [/\n/g, '\r\n']
+      : [/\r\n/g, '\n'];
 
-  let [replacePattern, lineSep] = ev.document.eol === vscode.EndOfLine.CRLF ? [/\n/g,'\r\n'] : [/\r\n/g,'\n'];
   clipTxt = clipTxt.replace(replacePattern, lineSep).trim();
 
   for (let change of ev.contentChanges) {
     let changeTxt = change.text.trim();
-    if (changeTxt.length < 2 || !isComplexJSON(changeTxt) || changeTxt !== clipTxt) continue;
+    if (
+      changeTxt.length < 2 ||
+      !isComplexJSON(changeTxt) ||
+      changeTxt !== clipTxt
+    ) {
+      continue;
+    }
 
     let structName = g.cfg.get(keys.settings.generatedTypeName);
     let struct = convertText(clipTxt, structName);
-    if (!type(struct.error).is(enums.T.undefined)) continue;
+    if (type(struct.error).isNot(enums.T.undefined)) continue;
 
     if (g.ctx.globalState.get(lKey(keys.ctx.temp.promptForStructName))) {
       structName = await vscode.window.showInputBox({
@@ -57,8 +66,9 @@ async function onDidChangeTextDocumentListener(ev) {
       change.range.start,
       new vscode.Position(
         change.range.start.line + (lines.length > 1 ? lines.length - 1 : 0),
-        change.range.end.character + (lines.length > 0 ? lines[lines.length - 1].length : 0)
-      )
+        change.range.end.character +
+          (lines.length > 0 ? lines[lines.length - 1].length : 0),
+      ),
     );
 
     let edit = new vscode.WorkspaceEdit();
@@ -66,7 +76,9 @@ async function onDidChangeTextDocumentListener(ev) {
 
     await vscode.workspace.applyEdit(edit);
 
-    if (g.cfg.get(keys.settings.saveConversions)) await saveConversion(changeTxt, struct.go);
+    if (g.cfg.get(keys.settings.saveConversions)) {
+      await saveConversion(changeTxt, struct.go);
+    }
   }
 
   return Promise.resolve();
@@ -79,7 +91,9 @@ async function onDidChangeTextDocumentListener(ev) {
 async function onDidChangeConfigurationListener(ev) {
   if (ev.affectsConfiguration(lKey(keys.settings.pasteIntegration.self))) {
     let { langs } = await updatePasteContext();
-    langs.length > 0 ? await g.li.onDidChangeTextDocument.enable() : await g.li.onDidChangeTextDocument.dispose();
+    langs.length > 0
+      ? await g.li.onDidChangeTextDocument.enable()
+      : await g.li.onDidChangeTextDocument.dispose();
   }
 
   return Promise.resolve();
@@ -98,11 +112,18 @@ async function onDidChangeConfigurationListener(ev) {
 async function updatePasteContext() {
   let ctx = {
     langs: g.cfg.get(keys.settings.pasteIntegration.supportedLanguages) || [],
-    promptForTypeName: g.cfg.get(keys.settings.pasteIntegration.promptForTypeName) || false,
+    promptForTypeName:
+      g.cfg.get(keys.settings.pasteIntegration.promptForTypeName) || false,
   };
 
-  await g.ctx.globalState.update(lKey(keys.ctx.temp.pasteIntegrationLangs), ctx.langs);
-  await g.ctx.globalState.update(lKey(keys.ctx.temp.promptForStructName), ctx.promptForTypeName);
+  await g.ctx.globalState.update(
+    lKey(keys.ctx.temp.pasteIntegrationLangs),
+    ctx.langs,
+  );
+  await g.ctx.globalState.update(
+    lKey(keys.ctx.temp.promptForStructName),
+    ctx.promptForTypeName,
+  );
 
   return Promise.resolve(ctx);
 }
