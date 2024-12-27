@@ -1,4 +1,4 @@
-const { type, T } = require('../../src/type');
+const { type, T } = require('../src/type');
 
 describe('type function', () => {
   test('should identify primitive types', () => {
