@@ -44,6 +44,11 @@
         "configuration": {
             "title": "JSON to Go",
             "properties": {
+                "json-to-go.addExamples": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "When enabled will add example tags to struct fields"
+                },
                 "json-to-go.allOmitEmpty": {
                     "type": "boolean",
                     "default": false,

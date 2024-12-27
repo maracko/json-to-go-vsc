@@ -387,6 +387,7 @@ async function initCtx(reset = false) {
 async function resetAllSettings(force = false) {
   const reset = async () => {
     const settings = [
+      keys.settings.addExample,
       keys.settings.autoSelectTypeName,
       keys.settings.allOmitEmpty,
       keys.settings.inlineTypeDefinitions,

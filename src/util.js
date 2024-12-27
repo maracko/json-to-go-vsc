@@ -59,7 +59,7 @@ function convertText(text, typeName) {
     text,
     typeName || g.cfg.get(keys.settings.generatedTypeName),
     !g.cfg.get(keys.settings.inlineTypeDefinitions),
-    false,
+    g.cfg.get(keys.settings.addExamples),
     g.cfg.get(keys.settings.allOmitEmpty),
   );
 }

@@ -75,6 +75,7 @@ const keys = {
     onDidChangeConfiguration: 'onDidChangeConfiguration',
   },
   settings: {
+    addExamples: 'addExamples',
     allOmitEmpty: 'allOmitEmpty',
     autoSelectTypeName: 'autoSelectTypeName',
     generatedTypeName: 'generatedTypeName',
