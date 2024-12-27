@@ -13,7 +13,6 @@
  */
 
 /**********/
-// eslint-disable-next-line node/no-missing-require
 const vscode = require('vscode');
 const { type, T } = require('./type');
 /**********/
@@ -76,10 +75,10 @@ const keys = {
     onDidChangeConfiguration: 'onDidChangeConfiguration',
   },
   settings: {
-    autoSelectTypeName: 'autoSelectTypeName',
     allOmitEmpty: 'allOmitEmpty',
-    inlineTypeDefinitions: 'inlineTypeDefinitions',
+    autoSelectTypeName: 'autoSelectTypeName',
     generatedTypeName: 'generatedTypeName',
+    inlineTypeDefinitions: 'inlineTypeDefinitions',
     saveConversions: 'saveConversions',
     io: {
       /** @deprecated replaced by input */
@@ -96,19 +95,13 @@ const keys = {
 };
 
 /**
- * The big G. Actually, it's a small one, but he always dreamed biG.
- * @type {GlobalDisposable}
- */
-const g = newGlobals();
-
-/**
  * Interface for operating listeners.
  * @typedef {Object} ListenerController
- * @property {(listenerFunc?,evSrc?) => boolean} enable Enables the listener either using the provided listener and event source, or existing one, throwing an error if neither is provided.
- * @property {() => boolean} dispose Disables the listener if it exists, returning true if so. It can be re-enabled with enable.
- * @property { () => (event?) } listener The underlying listener function.
- * @property {() => (event?)} source The source of the events.
- * @property {() => string} name The name of the listener.
+ * @property {(listenerFunc?,evSrc?) => boolean} enable Enables the listener either using the provided listener and event source, or existing one, throwing an error if neither exists.
+ * @property {() => boolean} dispose Disables the listener if it exists, returning true if so. It can be re-enabled later using enable without arguments.
+ * @property {(event?)} listener The current listener function.
+ * @property {(event?)} eventSource The current event source function.
+ * @property {string} name The name of the listener.
  */
 
 /**
@@ -122,10 +115,17 @@ const g = newGlobals();
  * @property {vscode.WorkspaceConfiguration} cfg The workspace configuration object.
  * @property {vscode.ExtensionContext} [ctx] The extension context provided by VS Code.
  * @property {vscode.Disposable[]} disposables All global disposables are added here
- * @property {Listeners} li An object with ListenerController instances.
  * @property {() => number} dispose A method that disposes all global disposables and increments the timesDisposed counter.
- * @property {() => number} timesDisposed A method that returns the number of times the object has been disposed.
+ * @property {(msg: string, error?: boolean) => void} log A simple logger for extension
+ * @property {Listeners} li An object with ListenerController instances.
+ * @property {number} timesDisposed A method that returns the number of times the object has been disposed.
  */
+
+/**
+ * The big G. Actually, it's a small one, but he always dreamed biG.
+ * @type {GlobalDisposable}
+ */
+const g = newGlobals();
 
 /**
  * Creates a new GlobalDisposable object. The object is a proxy that prevents reassigning or deleting its properties, unless dispose is called.
@@ -134,45 +134,59 @@ const g = newGlobals();
  */
 function newGlobals(input = {}) {
   if (!isObj(input)) input = {};
+
   let nDisp = 0;
-  const timesDisposed = () => nDisp;
-  let daRealG = {
+
+  const daRealG = {
     ...deepCopy(input),
+
+    get cfg() {
+      return vscode.workspace.getConfiguration(keys.jsonToGo);
+    },
+
+    ctx: undefined,
+
     disposables: [],
+
+    dispose: function () {
+      this.disposables.forEach((d) => d.dispose());
+      this.disposables.length = 0;
+
+      Object.keys(this.li).forEach((k) => this.li[k].dispose());
+
+      simpleLog(`GlobalDisposable: disposed [${++nDisp}]`);
+
+      return nDisp;
+    },
+
     li: {
       onDidChangeTextDocument: new ListenerControllerInitializer(),
       onDidChangeConfiguration: new ListenerControllerInitializer(),
     },
-    timesDisposed: timesDisposed,
-    dispose: function () {
-      this.disposables.forEach((d) => d.dispose());
-      this.disposables.length = 0;
-      Object.keys(this.li).forEach((k) => this.li[k].dispose());
-      nDisp++;
 
+    log: simpleLog,
+
+    get timesDisposed() {
       return nDisp;
     },
   };
 
   return new Proxy(daRealG, {
-    set: function (target, key, value) {
-      if (key in target) {
-        console.error(
-          `json-to-go: GlobalDisposable: cannot reassign '${String(key)}', it is already set to: '${JSON.stringify(target[key])}'`,
+    get: (target, prop) => target[prop],
+
+    set: (target, key, value) => {
+      if (key in target && target[key] !== undefined) {
+        simpleLog(
+          `GlobalDisposable: cannot reassign '${String(key)}', it is already set to: '${JSON.stringify(target[key])}'`,
+          true,
         );
 
         return false;
       }
+
       target[key] = value;
 
       return true;
-    },
-    get: function name(target, prop) {
-      if (prop === 'cfg') {
-        return vscode.workspace.getConfiguration(keys.jsonToGo);
-      }
-
-      return target[prop];
     },
   });
 }
@@ -183,10 +197,19 @@ function newGlobals(input = {}) {
  */
 function ListenerControllerInitializer() {
   let disp, list, evSrc;
+
+  let nEnable = 0;
+  let nDisp = 0;
+
+  createGetter(this, 'eventSource', () => evSrc);
+  createGetter(this, 'listener', () => list);
+  createGetter(this, 'name', () => list.name);
+
   this.enable = (li, ev) => {
     if ((!isFunc(li) || !isFunc(ev)) && (!isFunc(list) || !isFunc(evSrc))) {
-      throw new Error(`must provide a listener and an event source, have args:[${type(li).all} and ${type(ev).all}]
-        `);
+      throw NewError(
+        `To enable ListenerController for the first time must provide listener and event source, have args:[${type(li).all} and ${type(ev).all}]`,
+      );
     }
 
     let validConf = false;
@@ -195,8 +218,11 @@ function ListenerControllerInitializer() {
       evSrc = ev;
       validConf = true;
     }
+
     if (!validConf && (!isFunc(list) || !isFunc(evSrc))) {
-      throw new Error(`Invalid conf: ${JSON.stringify(this)}`);
+      throw NewError(
+        `Invalid ListenerController conf: ${JSON.stringify(this)}`,
+      );
     }
 
     if (disp && isFunc(disp.dispose)) {
@@ -205,13 +231,11 @@ function ListenerControllerInitializer() {
 
     disp = evSrc(list, this, g.ctx.subscriptions);
 
-    simpleLog(`ListenerController: ${this.name()} enabled`);
+    simpleLog(`ListenerController(${this.name}): enabled [${++nEnable}]`);
 
     return true;
   };
-  this.listener = () => list;
-  this.name = () => list.name;
-  this.source = () => evSrc;
+
   this.dispose = () => {
     let op = false;
     if (disp && isFunc(disp.dispose)) {
@@ -219,7 +243,7 @@ function ListenerControllerInitializer() {
       disp = undefined;
       op = true;
 
-      simpleLog(`ListenerController: ${this.name()} disposed`);
+      simpleLog(`ListenerController(${this.name}): disposed [${++nDisp}]`);
     }
 
     return op;
@@ -255,10 +279,35 @@ function isFunc(x) {
   return type(x).is(enums.T.function);
 }
 
-function simpleLog(msg) {
-  const timeStr = new Date().toISOString().replace('T', ' ').replace('Z', '');
-  console.log(`[${timeStr}] [${keys.jsonToGo}]: ${msg}`);
+function createGetter(obj, prop, getter) {
+  Object.defineProperty(obj, prop, {
+    get: getter,
+    enumerable: true,
+    configurable: false,
+  });
 }
+
+/**
+ * Logs a message with a timestamp and extension name prefix.
+ * @param {string} msg - The message to log.
+ * @param {boolean} [error=false] - If true, logs the message as an error; otherwise, logs it as a regular message.
+ */
+function simpleLog(msg, error = false) {
+  const timeStr = new Date().toISOString().replace('T', ' ').replace('Z', '');
+  const log = `[${timeStr}] [${keys.jsonToGo}] ${msg}`;
+
+  error ? console.error(log) : console.log(log);
+}
+
+/**
+ * Create new Error with the extension name prefix.
+ * @param {string} msg - The error message.
+ */
+function NewError(msg) {
+  return new Error(`${keys.jsonToGo}: ${msg}`);
+}
+
+simpleLog('globals.js loaded');
 
 module.exports = {
   enums,

@@ -13,13 +13,13 @@
  */
 
 /**
- * @typedef {Object} TypeInfo An object containing type information
- * @property {string[]} all An array of all types matched
- * @property {(other: any)=> boolean} equalsType Check if another object has exactly the same types
- * @property {(...types: string[])=> boolean} is Return true if object is of all provided types
- * @property {(...types: string[])=> boolean} isNot Return true if object is not of any of the provided types
- * @property {(what: { is?: string | string[], isNot?: string | string[] })=> boolean} match Return true if object matches all `is` types and none of the `isNot` types
- * @property {()=> string} toString String representation of all types matched
+ * @typedef {Object} TypeInfo An object containing type information.
+ * @property {string[]} all An array of all types matched.
+ * @property {(other: any)=> boolean} equalsType Check if another object has exactly the same types.
+ * @property {(...types: string[])=> boolean} is Return true if object is of all provided types.
+ * @property {(...types: string[])=> boolean} isNot Return true if object is not of any of the provided types.
+ * @property {(what: { is?: string | string[], isNot?: string | string[] })=> boolean} match Return true if object matches all `is` types and none of the `isNot` types.
+ * @property {()=> string} toString String representation of all types matched.
  */
 
 /**
@@ -75,7 +75,6 @@ const _m = {
   '[object Symbol]': [Symbol, T.symbol],
   '[object Undefined]': [undefined, T.undefined],
   '[object WeakMap]': [WeakMap, T.weakmap],
-  // eslint-disable-next-line no-undef
   '[object WeakRef]': [WeakRef, T.weakref],
   '[object WeakSet]': [WeakSet, T.weakset],
 };
@@ -145,9 +144,9 @@ function type(obj) {
 }
 
 /**
- * Lift up array from variadic arguments if it is the only argument
+ * Lift up array from variadic arguments if it is the only argument.
  * @param {any[]} varArg
- * @returns {any[]} The lifted or original array
+ * @returns {any[]} The lifted or original array.
  */
 function liftArray(varArg) {
   if (varArg.length === 1 && Array.isArray(varArg[0])) return varArg[0];

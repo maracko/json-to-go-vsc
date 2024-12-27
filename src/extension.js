@@ -44,12 +44,19 @@ async function activate(ctx) {
         undefined,
         vscode.ConfigurationTarget.Global,
       );
+
       resetAllSettings(true);
+
+      const msg =
+        'Json to Go has reached a major release and your settings have been reset.' +
+        '\n' +
+        'Sorry for the inconvenience, you are encouraged to check out what changed.';
+
       const btn = await vscode.window.showInformationMessage(
-        `Json to Go has reached a major release and your settings have been reset.
-        Sorry for the inconvenience, you are encouraged to check out what changed.`,
+        msg,
         enums.Button.GoToSettings,
       );
+
       if (btn === enums.Button.GoToSettings) openSettingsWindow();
     }
 
@@ -57,6 +64,7 @@ async function activate(ctx) {
       li.onDidChangeConfigurationListener,
       vscode.workspace.onDidChangeConfiguration,
     );
+
     g.li.onDidChangeTextDocument.enable(
       li.onDidChangeTextDocumentListener,
       (li, thisArg, disposables) =>
@@ -72,11 +80,13 @@ async function activate(ctx) {
         return await convert();
       }),
     );
+
     ctx.subscriptions.push(
       vscode.commands.registerCommand(lKey(keys.cmd.convertFresh), async () => {
         return await convert(true);
       }),
     );
+
     ctx.subscriptions.push(
       vscode.commands.registerCommand(
         lKey(keys.cmd.resetAllSettings),
@@ -85,6 +95,7 @@ async function activate(ctx) {
         },
       ),
     );
+
     ctx.subscriptions.push(
       vscode.commands.registerCommand(lKey(keys.cmd.openSettings), async () => {
         return await openSettingsWindow();
@@ -111,6 +122,7 @@ async function convert(fresh = false) {
   try {
     let txt = '';
     let input = g.cfg.get(keys.settings.io.input);
+
     if (input === enums.input.askMe || fresh) {
       input = await vscode.window.showQuickPick(
         capArray([
@@ -123,12 +135,15 @@ async function convert(fresh = false) {
             'Select input source (can be changed inside extension settings)',
         },
       );
+
       if (!input) {
         vscode.window.showInformationMessage('Nothing chosen, aborting');
 
         return;
       }
+
       input = input.toLowerCase();
+
       if (!fresh) {
         if (g.ctx.globalState.get(lKey(keys.ctx.perm.askRememberInput))) {
           const rememberInput = await vscode.window.showQuickPick(
@@ -137,6 +152,7 @@ async function convert(fresh = false) {
               placeHolder: 'Remember input?',
             },
           );
+
           switch (rememberInput) {
           case enums.Button.Remember.Yes:
             g.cfg.update(
@@ -144,16 +160,19 @@ async function convert(fresh = false) {
               input,
               vscode.ConfigurationTarget.Global,
             );
+
             break;
           case enums.Button.Remember.DontAsk:
             g.ctx.globalState.update(
               lKey(keys.ctx.perm.askRememberInput),
               false,
             );
+
             break;
           case undefined:
           case enums.Button.Remember.No:
             break;
+
           default:
             weirdThrow(`Remember input: "${rememberInput}"`);
           }
@@ -170,10 +189,12 @@ async function convert(fresh = false) {
         return;
       }
       txt = editor.document.getText(editor.selection);
+
       break;
     }
     case enums.input.clipboard:
       txt = await vscode.env.clipboard.readText();
+
       break;
     case enums.input.currentFile:
       if (!vscode.window.activeTextEditor) {
@@ -182,6 +203,7 @@ async function convert(fresh = false) {
         return;
       }
       txt = vscode.window.activeTextEditor.document.getText();
+
       break;
     default:
       weirdThrow(`Input: "${input}"`);
@@ -194,6 +216,7 @@ async function convert(fresh = false) {
     }
 
     const struct = convertText(txt);
+
     if (struct.error) {
       vscode.window
         .showErrorMessage('Invalid JSON', enums.Button.ShowDetails)
@@ -218,11 +241,13 @@ async function convert(fresh = false) {
           placeHolder: 'Select output destination',
         },
       );
+
       if (!output) {
         vscode.window.showInformationMessage('Nothing chosen, aborting');
 
         return;
       }
+
       output = output.toLowerCase();
 
       if (!fresh) {
@@ -233,6 +258,7 @@ async function convert(fresh = false) {
               placeHolder: 'Remember output?',
             },
           );
+
           switch (rememberOutput) {
           case enums.Button.Remember.Yes:
             g.cfg.update(
@@ -240,16 +266,19 @@ async function convert(fresh = false) {
               output,
               vscode.ConfigurationTarget.Global,
             );
+
             break;
           case enums.Button.Remember.DontAsk:
             g.ctx.globalState.update(
               lKey(keys.ctx.perm.askRememberOutput),
               false,
             );
+
             break;
           case undefined:
           case enums.Button.Remember.No:
             break;
+
           default:
             weirdThrow(`Remember output "${rememberOutput}"`);
           }
@@ -279,6 +308,7 @@ async function convert(fresh = false) {
             }
           });
       }
+
       break;
     case enums.output.cursorPosition: {
       const editor = vscode.window.activeTextEditor;
@@ -287,9 +317,11 @@ async function convert(fresh = false) {
 
         return;
       }
+
       editor.edit((editBuilder) => {
         editBuilder.insert(editor.selection.active, struct.go);
       });
+
       break;
     }
     case enums.output.temporaryFile: {
@@ -297,11 +329,13 @@ async function convert(fresh = false) {
         language: 'go',
         content: struct.go,
       });
+
       await vscode.window.showTextDocument(
         doc,
         vscode.ViewColumn.Beside,
         false,
       );
+
       if (g.cfg.get(keys.settings.autoSelectTypeName)) {
         await vscode.commands.executeCommand('cursorMove', {
           to: 'right',
@@ -363,6 +397,7 @@ async function resetAllSettings(force = false) {
       keys.settings.pasteIntegration.promptForTypeName,
       keys.settings.pasteIntegration.supportedLanguages,
     ];
+
     for (const setting of settings) {
       await g.cfg.update(setting, undefined, vscode.ConfigurationTarget.Global);
     }
@@ -386,13 +421,16 @@ async function resetAllSettings(force = false) {
     },
     enums.Button.Confirm,
   );
+
   switch (btn) {
   case enums.Button.Cancel:
   case undefined:
     break;
+
   case enums.Button.Confirm:
     await reset();
     await openSettingsWindow();
+
     break;
   }
 
@@ -411,28 +449,26 @@ function openSettingsWindow() {
  * @param {Error} error - The error object.
  */
 async function handleErr(error) {
-  if (
-    type(error).isNot(enums.T.object) ||
-    type(error.message).isNot(enums.T.string)
-  ) {
-    console.error(
-      `Error: An unknown error occurred in JSON to Go: ${JSON.stringify(
-        error,
-      )}`,
-    );
+  let msg;
+
+  if (type(error?.message).isNot(enums.T.string)) {
+    msg = `Error: An unknown error occurred in JSON to Go: ${JSON.stringify(error)}`;
+    g.log(msg, true);
 
     return;
   }
-  const errStr = `Error:\nName: "${error.name}"\nMessage: "${error.message}"\nStack: "${error.stack}"`;
-  console.error(errStr);
+
+  msg = `Error:\nName: "${error.name}"\nMessage: "${error.message}"\nStack: "${error.stack}"`;
+  g.log(msg, true);
+
   vscode.window
     .showErrorMessage(
-      `An error occurred in JSON to Go: ${error.message}`,
+      'An error occurred in JSON to Go',
       enums.Button.ShowDetails,
     )
     .then((btn) => {
       if (btn === enums.Button.ShowDetails) {
-        vscode.window.showInformationMessage(errStr);
+        vscode.window.showInformationMessage(msg);
       }
     });
 }
